@@ -20,7 +20,7 @@ namespace winPEAS
         // Static blacklists
         static string strTrue = "True";
         static string strFalse = "False";
-        static string badgroups = "docker|Remote |DNSAdmins|Azure Admins|Admins";//The space in Remote is important to not mix with SeShutdownRemotePrivilege
+        static string badgroups = "docker|Remote |DNSAdmins|AD Recycle Bin|Azure Admins|Admins";//The space in Remote is important to not mix with SeShutdownRemotePrivilege
         static string badpasswd = "NotChange|NotExpi";
         static string badPrivileges = "SeImpersonatePrivilege|SeAssignPrimaryPrivilege|SeTcbPrivilege|SeBackupPrivilege|SeRestorePrivilege|SeCreateTokenPrivilege|SeLoadDriverPrivilege|SeTakeOwnershipPrivilege|SeDebugPrivilege";
         static string goodSoft = "Windows Phone Kits|Windows Kits|Windows Defender|Windows Mail|Windows Media Player|Windows Multimedia Platform|windows nt|Windows Photo Viewer|Windows Portable Devices|Windows Security|Windows Sidebar|WindowsApps|WindowsPowerShell| Windows$|Microsoft|WOW6432Node|internet explorer|Internet Explorer|Common Files";
@@ -83,6 +83,7 @@ namespace winPEAS
             try { 
                 Beaprint.GrayPrint("   - Creating current user groups list...");
                 WindowsIdentity identity = WindowsIdentity.GetCurrent();
+                currentUserSIDs[identity.User.ToString()] = Environment.UserName;
                 IdentityReferenceCollection currentSIDs= identity.Groups;
                 foreach (IdentityReference group in identity.Groups)
                 {
@@ -187,9 +188,14 @@ namespace winPEAS
             {
                 try
                 {
+                    Dictionary<string, string> colorsPSI = new Dictionary<string, string>()
+                        {
+                            { "PS history file: .+", Beaprint.ansi_color_bad },
+                            { "PS history size: .+", Beaprint.ansi_color_bad }
+                        };
                     Beaprint.MainPrint("PowerShell Settings", "");
                     Dictionary<string, string> PSs = SystemInfo.GetPowerShellSettings();
-                    Beaprint.DictPrint(PSs, false);
+                    Beaprint.DictPrint(PSs, colorsPSI, false);
                 }
                 catch (Exception ex)
                 {
@@ -516,8 +522,12 @@ namespace winPEAS
                     Beaprint.AnsiPrint("  Current user: " + currentUserName, colorsU());
 
                     List<string> currentGroupsNames = new List<string>();
-                    foreach (KeyValuePair<string,string> g in currentUserSIDs)
+                    foreach (KeyValuePair<string, string> g in currentUserSIDs)
+                    {
+                        if (g.Key == WindowsIdentity.GetCurrent().User.ToString())
+                            continue;
                         currentGroupsNames.Add(String.IsNullOrEmpty(g.Value) ? g.Key : g.Value);
+                    }
 
                     Beaprint.AnsiPrint("  Current groups: " + String.Join(", ", currentGroupsNames), colorsU());
                     Beaprint.PrintLineSeparator();
@@ -1954,6 +1964,31 @@ namespace winPEAS
                 }
             }
 
+            void PrintConsoleHostHistory()
+            {
+                try
+                {
+                    Beaprint.MainPrint("Powershell History", "");
+                    string console_host_history = InterestingFiles.GetConsoleHostHistory();
+                    if (console_host_history != "")
+                    {
+                        
+                        string text = File.ReadAllText(console_host_history);
+                        List<string> credStringsRegexPowershell = new List<string>(credStringsRegex);
+                        credStringsRegexPowershell.Add("CONVERTTO-SECURESTRING");
+
+                        if (MyUtils.ContainsAnyRegex(text.ToUpper(), credStringsRegexPowershell))
+                            Beaprint.BadPrint("    " + console_host_history + " (Potential credentials found)");
+                        else
+                            System.Console.WriteLine("    " + console_host_history);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Beaprint.GrayPrint(String.Format("{0}", ex));
+                }
+            }
+
             void PrintSAMBackups()
             {
                 try
@@ -2177,6 +2212,7 @@ namespace winPEAS
             PrintSSHKeysReg();
             PrintCloudCreds();
             PrintUnattendFiles();
+            PrintConsoleHostHistory();
             PrintSAMBackups();
             PrintMcAffeSitelistFiles();
             PrintCachedGPPPassword();
