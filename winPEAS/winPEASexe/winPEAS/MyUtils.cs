@@ -5,6 +5,7 @@ using System.IO;
 using Microsoft.Win32;
 using System.Security.Principal;
 using System.Diagnostics;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Security.AccessControl;
@@ -241,6 +242,11 @@ namespace winPEAS
             }
         }
 
+        public static string GetCLSIDBinPath(string CLSID)
+        {
+            return GetRegValue("HKLM", @"SOFTWARE\Classes\CLSID\" + CLSID + @"\InprocServer32", ""); //To get the default object you need to use an empty string
+        }
+
 
         ///////////////////////////////////
         //////// Check Permissions ////////
@@ -426,6 +432,7 @@ namespace winPEAS
                     { "Modify", (int)FileSystemRights.Modify }, //0x301bf
                     { "Write", (int)FileSystemRights.Write }, //0x116
                     { "ChangePermissions", (int)FileSystemRights.ChangePermissions }, //0x40000
+                    { "AppendData/CreateDirectories", (int)FileSystemRights.AppendData },
                 };
             }
 
@@ -522,9 +529,17 @@ namespace winPEAS
         public static string GetExecutableFromPath(string path)
         {
             string binaryPath = "";
-            Match match_path = Regex.Match(path, @"^\W*([a-z]:\\.+?(\.exe|\.dll|\.sys))\W*", RegexOptions.IgnoreCase);
+            Match match_path = Regex.Match(path, @"^\W*([a-z]:\\.+?(\.exe|\.dll|\.sys))\W*", RegexOptions.RightToLeft | RegexOptions.IgnoreCase);
             if (match_path.Groups.Count > 1)
                 binaryPath = match_path.Groups[1].ToString();
+
+            //Check if rundll32
+            string[] binaryPathdll32 = binaryPath.Split(new string[] {"Rundll32.exe"}, StringSplitOptions.None);
+
+            if (binaryPathdll32.Length > 1)
+            {
+                binaryPath = binaryPathdll32[1].Trim();
+            }
             return binaryPath;
         }
 
