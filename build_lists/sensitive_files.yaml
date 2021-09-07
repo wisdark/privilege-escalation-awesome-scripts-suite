@@ -2,6 +2,7 @@
 ## LINPEAS SPECIFICATIONS ##
 ############################
 
+
 root_folders:
   - /applications  #common
   - /bin           #common
@@ -79,6 +80,13 @@ storage_template: >
 
 int_hidden_files_markup: "peass{INT_HIDDEN_FILES}"
 
+suidVB1_markup: "peass{SUIDVB1_HERE}"
+suidVB2_markup: "peass{SUIDVB2_HERE}"
+sudoVB1_markup: "peass{SUDOVB1_HERE}"
+sudoVB2_markup: "peass{SUDOVB2_HERE}"
+cap_setuid_markup: "peass{CAP_SETUID_HERE}"
+cap_setgid_markup: "peass{CAP_SETGID_HERE}"
+
 
 
 ##############################
@@ -89,8 +97,8 @@ int_hidden_files_markup: "peass{INT_HIDDEN_FILES}"
 variables_markup: "peass{VARIABLES}"
 
 variables:
-   - name: pwd_inside_history
-     value: "enable_autologin|7z|unzip|useradd|linenum|linpeas|mkpasswd|htpasswd|openssl|PASSW|passw|shadow|root|sudo|^su|pkexec|^ftp|mongo|psql|mysql|rdesktop|xfreerdp|^ssh|steghide|@"
+  - name: pwd_inside_history
+    value: "enable_autologin|7z|unzip|useradd|linenum|linpeas|mkpasswd|htpasswd|openssl|PASSW|passw|shadow|root|sudo|^su|pkexec|^ftp|mongo|psql|mysql|rdesktop|xfreerdp|^ssh|steghide|@|KEY=|TOKEN=|BEARER=|Authorization:"
 
 
 
@@ -302,7 +310,22 @@ search:
                 remove_path: "mysql/mysql"
                 search_in: 
                   - common
-    
+
+  - name: MariaDB
+    value:
+        config:
+          auto_check: True
+        
+        files:
+          - name: "mariadb.cnf"
+            value: 
+                bad_regex: "user.*|password.*"
+                type: f
+                remove_regex: '^#'
+                remove_empty_lines: True
+                search_in: 
+                  - common
+          
           - name: "debian.cnf"
             value: 
                 bad_regex: "user.*|password.*"
@@ -310,7 +333,6 @@ search:
                 only_bad_lines: True
                 search_in: 
                   - common
-
 
   
   - name: PostgreSQL
@@ -374,7 +396,7 @@ search:
                         bad_regex: "AuthType|AuthName|AuthUserFile|ServerName|ServerAlias"
                         only_bad_lines: True
                         remove_empty_lines: True
-                        remove_regex: '^#'
+                        remove_regex: '#'
                 search_in: 
                     - common
       
@@ -571,7 +593,7 @@ search:
           auto_check: True
 
         files:
-          - name:  "hostapd.conf"
+          - name: "hostapd.conf"
             value: 
                 bad_regex: "passphrase.*"
                 remove_regex: '^#'
@@ -594,13 +616,37 @@ search:
                 search_in: 
                   - common
   
+
+  - name: Racoon
+    value:
+        config:
+          auto_check: True
+
+        files:
+          - name: "racoon.conf"
+            value:
+                remove_empty_lines: True
+                bad_regex: "pre_shared_key.*"
+                remove_regex: '^#'
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "psk.txt"
+            value:
+                remove_empty_lines: True
+                bad_regex: ".*"
+                type: f
+                search_in: 
+                  - common
+
   - name: VNC
     value:
         config:
           auto_check: True
 
         files:
-          - name:  ".vnc"
+          - name: ".vnc"
             value: 
                 files:
                   - name: "passwd"
@@ -1806,6 +1852,24 @@ search:
                 type: f
                 search_in: 
                   - common
+  
+  - name: Postfix
+    value:
+        config:
+          auto_check: True
+
+        files:
+          - name: "postfix"
+            value: 
+                files:
+                  - name: "master.cf"
+                    value:
+                        bad_regex: "user=|argv="
+                        remove_empty_lines: True
+                        line_grep: '"user="'
+                type: d
+                search_in: 
+                  - common
 
   - name: CloudFlare
     value:
@@ -2073,7 +2137,9 @@ search:
                         remove_regex: '^#'
                 type: d
                 search_in: 
-                  - common
+                  - /etc #False possitives in home
+                  - /var
+                  - /usr
 
   - name: SeedDMS
     value:
@@ -2115,6 +2181,70 @@ search:
             value: 
                 just_list_file: True
                 type: f
+                search_in: 
+                  - common
+
+  - name: Sentry
+    value:
+        config:
+          auto_check: True
+
+        files:
+          - name: "sentry"
+            value: 
+                files:
+                  - name: "config.yml"
+                    value:
+                        bad_regex: "*key*"
+                        remove_empty_lines: True
+                        remove_regex: '^#'
+                type: d
+                search_in: 
+                  - common
+          
+          - name: "sentry.conf.py"
+            value: 
+                bad_regex: "[pP][aA][sS][sS].*|[uU][sS][eE][rR].*"
+                remove_empty_lines: True
+                remove_regex: '^#'
+                type: f
+                search_in: 
+                  - common
+
+  - name: Strapi
+    value:
+        config:
+          auto_check: True
+
+        files:
+          - name: "environments"
+            value: 
+                files:
+                  - name: "custom.json"
+                    value:
+                        bad_regex: "username.*|[pP][aA][sS][sS].*|secret.*"
+                        remove_empty_lines: True
+                  - name: "database.json"
+                    value:
+                        bad_regex: "username.*|[pP][aA][sS][sS].*|secret.*"
+                        remove_empty_lines: True
+                  - name: "request.json"
+                    value:
+                        bad_regex: "username.*|[pP][aA][sS][sS].*|secret.*"
+                        remove_empty_lines: True
+                  - name: "response.json"
+                    value:
+                        bad_regex: "username.*|[pP][aA][sS][sS].*|secret.*"
+                        remove_empty_lines: True
+                  - name: "security.json"
+                    value:
+                        bad_regex: "username.*|[pP][aA][sS][sS].*|secret.*"
+                        remove_empty_lines: True
+                  - name: "server.json"
+                    value:
+                        bad_regex: "username.*|[pP][aA][sS][sS].*|secret.*"
+                        remove_empty_lines: True
+                type: d
                 search_in: 
                   - common
 
