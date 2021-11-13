@@ -86,6 +86,8 @@ sudoVB1_markup: "peass{SUDOVB1_HERE}"
 sudoVB2_markup: "peass{SUDOVB2_HERE}"
 cap_setuid_markup: "peass{CAP_SETUID_HERE}"
 cap_setgid_markup: "peass{CAP_SETGID_HERE}"
+les_markup: "peass{LES}"
+les2_markup: "peass{LES2}"
 
 
 
@@ -952,6 +954,24 @@ search:
                   - common
       
           - name: "kadm5.acl"
+            value: 
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "secrets.ldb"
+            value: 
+                type: f
+                search_in: 
+                  - common
+          
+          - name: ".secrets.mkey"
+            value: 
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "sssd.conf"
             value: 
                 type: f
                 search_in: 
@@ -1952,7 +1972,7 @@ search:
         files:
           - name: ".env"
             value: 
-                bad_regex: "[pP][aA][sS][sS].*"
+                bad_regex: "[pP][aA][sS][sS].*|[tT][oO][kK][eE][N]|[dD][bB]"
                 remove_regex: '^#'
                 remove_empty_lines: True
                 type: f
@@ -1968,6 +1988,21 @@ search:
           - name: ".msmtprc"
             value: 
                 bad_regex: "user.*|password.*"
+                remove_regex: '^#'
+                remove_empty_lines: True
+                type: f
+                search_in: 
+                  - common
+  
+  - name: InfluxDB
+    value:
+        config:
+          auto_check: True
+
+        files:
+          - name: "influxdb.conf"
+            value: 
+                bad_regex: "auth-enabled.*=.*false|token|https-private-key"
                 remove_regex: '^#'
                 remove_empty_lines: True
                 type: f
@@ -2277,11 +2312,58 @@ search:
                         bad_regex: "database_pw.*|database_user.*|database_pass.*"
                         line_grep: '"database_pw|database_user|database_pass|database_type|database_default|detabase_hostname|database_port|database_ssl"'
 
+                type: d
+                search_in: 
+                  - common
+  
+  - name: Roundcube
+    value:
+        config:
+          auto_check: True
+
+        files:
+          - name: "roundcube"
+            value:
+                files:
+                  - name: "config.inc.php"
+                    value:
+                        bad_regex: "db_dsnw"
+                        line_grep: '"config\["'
 
                 type: d
                 search_in: 
                   - common
+  
+  - name: Passbolt
+    value:
+        config:
+          auto_check: True
 
+        files:
+          - name: "passbolt.php"
+            value: 
+                bad_regex: "[pP][aA][sS][sS].*|[uU][sS][eE][rR].*"
+                line_grep: '"host|port|username|password|database"'
+                remove_empty_lines: True
+                remove_regex: '^#'
+                type: f
+                search_in: 
+                  - common
+
+  - name: Wget
+    value:
+        config:
+          auto_check: True
+
+        files:
+          - name: ".wgetrc"
+            value: 
+                bad_regex: "[pP][aA][sS][sS].*|[uU][sS][eE][rR].*"
+                remove_empty_lines: True
+                remove_regex: '^#'
+                type: f
+                search_in: 
+                  - common
 
   - name: Interesting logs
     value:
