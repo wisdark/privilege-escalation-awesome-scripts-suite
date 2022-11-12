@@ -2,9 +2,9 @@
 
 ![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/winPEAS/winPEASexe/images/winpeas.png)
 
-**WinPEAS is a script that searh for possible paths to escalate privileges on Windows hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/windows/windows-local-privilege-escalation)**
+**WinPEAS is a script that search for possible paths to escalate privileges on Windows hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation)**
 
-Check also the **Local Windows Privilege Escalation checklist** from [book.hacktricks.xyz](https://book.hacktricks.xyz/windows/checklist-windows-privilege-escalation)
+Check also the **Local Windows Privilege Escalation checklist** from [book.hacktricks.xyz](https://book.hacktricks.xyz/windows-hardening/checklist-windows-privilege-escalation)
 
 ### WinPEAS.bat is a batch script made for Windows systems which don't support WinPEAS.exe (Net.4 required)
 
@@ -128,10 +128,6 @@ Here you can see that the privileges of user *NT AUTHORITY\SYSTEM* appears in th
 This is the kind of outpuf that you have to look for when usnig the winPEAS.bat script.
 
 [More info about icacls here](https://ss64.com/nt/icacls.html)
-
-## Please, if this tool has been useful for you consider to donate
-
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.patreon.com/peass)
 
 ## Advisory
 

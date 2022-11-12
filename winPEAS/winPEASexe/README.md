@@ -2,9 +2,9 @@
 
 ![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/winPEAS/winPEASexe/images/winpeas.png)
 
-**WinPEAS is a script that search for possible paths to escalate privileges on Windows hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/windows/windows-local-privilege-escalation)**
+**WinPEAS is a script that search for possible paths to escalate privileges on Windows hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation)**
 
-Check also the **Local Windows Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/windows/checklist-windows-privilege-escalation)**
+Check also the **Local Windows Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/windows-hardening/checklist-windows-privilege-escalation)**
 
 [![youtube](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/winPEAS/winPEASexe/images/screen.png)](https://youtu.be/66gOwXMnxRI)
 
@@ -66,8 +66,7 @@ winpeas.exe -lolbas  #Execute also additional LOLBAS search check
 
 ## Help
 ```
-quiet                Do not print banner
-notcolor             Don't use ansi colors (all white)
+domain               Enumerate domain information
 systeminfo           Search system information
 userinfo             Search user information
 processinfo          Search processes information
@@ -76,16 +75,22 @@ applicationsinfo     Search installed applications information
 networkinfo          Search network information
 windowscreds         Search windows credentials
 browserinfo          Search browser information
-filesinfo            Search files that can contains credentials
+filesinfo            Search generic files that can contains credentials
+fileanalysis         Search specific files that can contains credentials and for regexes inside files
 eventsinfo           Display interesting events information
+
+quiet                Do not print banner
+notcolor             Don't use ansi colors (all white)
+searchpf             Search credentials via regex also in Program Files folders
 wait                 Wait for user input between checks
 debug                Display debugging information - memory usage, method execution time
-log=[logfile]        Log all output to file defined as logfile, or to "out.txt" if not specified
+log[=logfile]        Log all output to file defined as logfile, or to "out.txt" if not specified
+MaxRegexFileSize=1000000        Max file size (in Bytes) to search regex in. Default: 1000000B
 
 Additional checks (slower):
 -lolbas              Run additional LOLBAS check
 -linpeas=[url]       Run additional linpeas.sh check for default WSL distribution, optionally provide custom linpeas.sh URL
-                     (default: https://raw.githubusercontent.com/carlospolop/privilege-escalation-awesome-scripts-suite/master/linPEAS/linpeas.sh)
+                     (default: https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh)
 ```
 
 ## Basic information
@@ -276,13 +281,9 @@ If you find any issue, please report it using **[github issues](https://github.c
 
 **WinPEAS** is being **updated** every time I find something that could be useful to escalate privileges.
 
-## Please, if this tool has been useful for you consider to donate
-
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.patreon.com/peass)
-
 ## Advisory
 
 All the scripts/binaries of the PEAS Suite should be used for authorized penetration testing and/or educational purposes only. Any misuse of this software will not be the responsibility of the author or of any other collaborator. Use it at your own networks and/or with the network owner's permission.
 
 
-By Polop<sup>(TM)</sup>, makikvues (makikvues2[at]gmail[dot].com)
+By Polop

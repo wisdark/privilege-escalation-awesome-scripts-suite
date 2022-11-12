@@ -2,26 +2,32 @@
 #--------) Software Information (---------#
 ###########################################
 
+NGINX_KNOWN_MODULES="ngx_http_geoip_module.so|ngx_http_xslt_filter_module.so|ngx_stream_geoip_module.so|ngx_http_image_filter_module.so|ngx_mail_module.so|ngx_stream_module.so"
+
 #-- SI) Useful software
-print_2title "Useful software"
-for tool in $USEFUL_SOFTWARE; do command -v "$tool"; done
-echo ""
-
-#-- SI) Search for compilers
-print_2title "Installed Compilers"
-(dpkg --list 2>/dev/null | grep "compiler" | grep -v "decompiler\|lib" 2>/dev/null || yum list installed 'gcc*' 2>/dev/null | grep gcc 2>/dev/null; command -v gcc g++ 2>/dev/null || locate -r "/gcc[0-9\.-]\+$" 2>/dev/null | grep -v "/doc/");
-echo ""
-
-if [ "$(command -v pkg 2>/dev/null)" ]; then
-    print_2title "Vulnerable Packages"
-    pkg audit -F | sed -${E} "s,vulnerable,${SED_RED},g"
-    echo ""
+if ! [ "$SEARCH_IN_FOLDER" ]; then
+  print_2title "Useful software"
+  for tool in $USEFUL_SOFTWARE; do command -v "$tool"; done
+  echo ""
 fi
 
-if [ "$(command -v brew 2>/dev/null)" ]; then
-    print_2title "Brew Installed Packages"
-    brew list
-    echo ""
+#-- SI) Search for compilers
+if ! [ "$SEARCH_IN_FOLDER" ]; then
+  print_2title "Installed Compilers"
+  (dpkg --list 2>/dev/null | grep "compiler" | grep -v "decompiler\|lib" 2>/dev/null || yum list installed 'gcc*' 2>/dev/null | grep gcc 2>/dev/null; command -v gcc g++ 2>/dev/null || locate -r "/gcc[0-9\.-]\+$" 2>/dev/null | grep -v "/doc/");
+  echo ""
+
+  if [ "$(command -v pkg 2>/dev/null)" ]; then
+      print_2title "Vulnerable Packages"
+      pkg audit -F | sed -${E} "s,vulnerable,${SED_RED},g"
+      echo ""
+  fi
+
+  if [ "$(command -v brew 2>/dev/null)" ]; then
+      print_2title "Brew Installed Packages"
+      brew list
+      echo ""
+  fi
 fi
 
 if [ "$MACPEAS" ]; then
@@ -43,6 +49,11 @@ fi
 if [ "$(command -v mysql)" ] || [ "$(command -v mysqladmin)" ] || [ "$DEBUG" ]; then
   print_2title "MySQL version"
   mysql --version 2>/dev/null || echo_not_found "mysql"
+  mysqluser=$(systemctl status mysql 2>/dev/null | grep -o ".\{0,0\}user.\{0,50\}" | cut -d '=' -f2 | cut -d ' ' -f1)
+  if [ "$mysqluser" ]; then
+    echo "MySQL user: $mysqluser" | sed -${E} "s,$sh_usrs,${SED_LIGHT_CYAN}," | sed -${E} "s,$nosh_usrs,${SED_BLUE}," | sed -${E} "s,$knw_usrs,${SED_GREEN}," | sed "s,$USER,${SED_LIGHT_MAGENTA}," | sed "s,root,${SED_RED},"
+  fi
+  echo ""
   echo ""
 
   #-- SI) Mysql connection root/root
@@ -78,30 +89,46 @@ fi
 if [ "$PSTORAGE_MYSQL" ] || [ "$DEBUG" ]; then
   print_2title "Searching mysql credentials and exec"
   printf "%s\n" "$PSTORAGE_MYSQL" | while read d; do
-    for f in $(find $d -name debian.cnf 2>/dev/null); do
-      if [ -r "$f" ]; then
-        echo "We can read the mysql debian.cnf. You can use this username/password to log in MySQL" | sed -${E} "s,.*,${SED_RED},"
-        cat "$f"
+    if [ -f "$d" ] && ! [ "$(basename $d)" = "mysql" ]; then # Only interested in "mysql" that are folders (filesaren't the ones with creds)
+      STRINGS="`command -v strings`"
+      echo "Potential file containing credentials:"
+      ls -l "$d"
+      if [ "$STRINGS" ]; then
+        strings "$d"
+      else
+        echo "Strings not found, cat the file and check it to get the creds"
       fi
-    done
-    for f in $(find $d -name user.MYD 2>/dev/null); do
-      if [ -r "$f" ]; then
-        echo "We can read the Mysql Hashes from $f" | sed -${E} "s,.*,${SED_RED},"
-        grep -oaE "[-_\.\*a-Z0-9]{3,}" $f | grep -v "mysql_native_password"
-      fi
-    done
-    for f in $(grep -lr "user\s*=" $d 2>/dev/null | grep -v "debian.cnf"); do
-      if [ -r "$f" ]; then
-        u=$(cat "$f" | grep -v "#" | grep "user" | grep "=" 2>/dev/null)
-        echo "From '$f' Mysql user: $u" | sed -${E} "s,$sh_usrs,${SED_LIGHT_CYAN}," | sed -${E} "s,$nosh_usrs,${SED_BLUE}," | sed -${E} "s,$knw_usrs,${SED_GREEN}," | sed "s,$USER,${SED_LIGHT_MAGENTA}," | sed "s,root,${SED_RED},"
-      fi
-    done
-    for f in $(find $d -name my.cnf 2>/dev/null); do
-      if [ -r "$f" ]; then
-        echo "Found readable $f"
-        grep -v "^#" "$f" | grep -Ev "\W+\#|^#" 2>/dev/null | grep -Iv "^$" | sed "s,password.*,${SED_RED},"
-      fi
-    done
+
+    else
+      for f in $(find $d -name debian.cnf 2>/dev/null); do
+        if [ -r "$f" ]; then
+          echo "We can read the mysql debian.cnf. You can use this username/password to log in MySQL" | sed -${E} "s,.*,${SED_RED},"
+          cat "$f"
+        fi
+      done
+      
+      for f in $(find $d -name user.MYD 2>/dev/null); do
+        if [ -r "$f" ]; then
+          echo "We can read the Mysql Hashes from $f" | sed -${E} "s,.*,${SED_RED},"
+          grep -oaE "[-_\.\*a-Z0-9]{3,}" "$f" | grep -v "mysql_native_password"
+        fi
+      done
+      
+      for f in $(grep -lr "user\s*=" $d 2>/dev/null | grep -v "debian.cnf"); do
+        if [ -r "$f" ]; then
+          u=$(cat "$f" | grep -v "#" | grep "user" | grep "=" 2>/dev/null)
+          echo "From '$f' Mysql user: $u" | sed -${E} "s,$sh_usrs,${SED_LIGHT_CYAN}," | sed -${E} "s,$nosh_usrs,${SED_BLUE}," | sed -${E} "s,$knw_usrs,${SED_GREEN}," | sed "s,$USER,${SED_LIGHT_MAGENTA}," | sed "s,root,${SED_RED},"
+        fi
+      done
+      
+      for f in $(find $d -name my.cnf 2>/dev/null); do
+        if [ -r "$f" ]; then
+          echo "Found readable $f"
+          grep -v "^#" "$f" | grep -Ev "\W+\#|^#" 2>/dev/null | grep -Iv "^$" | sed "s,password.*,${SED_RED},"
+        fi
+      done
+    fi
+    
     mysqlexec=$(whereis lib_mysqludf_sys.so 2>/dev/null | grep "lib_mysqludf_sys\.so")
     if [ "$mysqlexec" ]; then
       echo "Found $mysqlexec"
@@ -124,7 +151,7 @@ if [ "$TIMEOUT" ] && [ "$(command -v psql)" ] || [ "$DEBUG" ]; then  # In some O
   fi
 
   print_list "PostgreSQL connection to template1 using postgres/NOPASS ........ "
-  if [ "$(timeout 1 psql -U postgres -d template1 -c 'select version()' 2>/dev/null)" ]; then echo "Yes" | sed "s,.)*,${SED_RED},"
+  if [ "$(timeout 1 psql -U postgres -d template1 -c 'select version()' 2>/dev/null)" ]; then echo "Yes" | sed "s,.*,${SED_RED},"
   else echo_no
   fi
 
@@ -142,7 +169,7 @@ fi
 
 peass{Mongo}
 
-peass{Apache}
+peass{Apache-Nginx}
 
 peass{Tomcat}
 
@@ -189,23 +216,35 @@ fi
 #-- SI) ssh files
 print_2title "Searching ssl/ssh files"
 if [ "$PSTORAGE_CERTSB4" ]; then certsb4_grep=$(grep -L "\"\|'\|(" $PSTORAGE_CERTSB4 2>/dev/null); fi
-sshconfig="$(ls /etc/ssh/ssh_config 2>/dev/null)"
-hostsdenied="$(ls /etc/hosts.denied 2>/dev/null)"
-hostsallow="$(ls /etc/hosts.allow 2>/dev/null)"
-writable_agents=$(find $folder_path -type s -name "agent.*" -or -name "*gpg-agent*" '(' '(' -user $USER ')' -or '(' -perm -o=w ')' -or  '(' -perm -g=w -and '(' $wgroups ')' ')' ')')
+if ! [ "$SEARCH_IN_FOLDER" ]; then
+  sshconfig="$(ls /etc/ssh/ssh_config 2>/dev/null)"
+  hostsdenied="$(ls /etc/hosts.denied 2>/dev/null)"
+  hostsallow="$(ls /etc/hosts.allow 2>/dev/null)"
+  writable_agents=$(find /tmp /etc /home -type s -name "agent.*" -or -name "*gpg-agent*" '(' '(' -user $USER ')' -or '(' -perm -o=w ')' -or  '(' -perm -g=w -and '(' $wgroups ')' ')' ')' 2>/dev/null)
+else
+  sshconfig="$(ls ${ROOT_FOLDER}etc/ssh/ssh_config 2>/dev/null)"
+  hostsdenied="$(ls ${ROOT_FOLDER}etc/hosts.denied 2>/dev/null)"
+  hostsallow="$(ls ${ROOT_FOLDER}etc/hosts.allow 2>/dev/null)"
+  writable_agents=$(find  ${ROOT_FOLDER} -type s -name "agent.*" -or -name "*gpg-agent*" '(' '(' -user $USER ')' -or '(' -perm -o=w ')' -or  '(' -perm -g=w -and '(' $wgroups ')' ')' ')' 2>/dev/null)
+fi
 
 peass{SSH}
 
 grep "PermitRootLogin \|ChallengeResponseAuthentication \|PasswordAuthentication \|UsePAM \|Port\|PermitEmptyPasswords\|PubkeyAuthentication\|ListenAddress\|ForwardAgent\|AllowAgentForwarding\|AuthorizedKeysFiles" /etc/ssh/sshd_config 2>/dev/null | grep -v "#" | sed -${E} "s,PermitRootLogin.*es|PermitEmptyPasswords.*es|ChallengeResponseAuthentication.*es|FordwardAgent.*es,${SED_RED},"
 
-if [ "$TIMEOUT" ]; then
-  privatekeyfilesetc=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /etc 2>/dev/null)
-  privatekeyfileshome=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' $HOMESEARCH 2>/dev/null)
-  privatekeyfilesroot=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /root 2>/dev/null)
-  privatekeyfilesmnt=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /mnt 2>/dev/null)
+if ! [ "$SEARCH_IN_FOLDER" ]; then
+  if [ "$TIMEOUT" ]; then
+    privatekeyfilesetc=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /etc 2>/dev/null)
+    privatekeyfileshome=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' $HOMESEARCH 2>/dev/null)
+    privatekeyfilesroot=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /root 2>/dev/null)
+    privatekeyfilesmnt=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /mnt 2>/dev/null)
+  else
+    privatekeyfilesetc=$(grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /etc 2>/dev/null) #If there is tons of files linpeas gets frozen here without a timeout
+    privatekeyfileshome=$(grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' $HOME/.ssh 2>/dev/null)
+  fi
 else
-  privatekeyfilesetc=$(grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /etc 2>/dev/null) #If there is tons of files linpeas gets frozen here without a timeout
-  privatekeyfileshome=$(grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' $HOME/.ssh 2>/dev/null)
+  # If $SEARCH_IN_FOLDER lets just search for private keys in the whole firmware
+  privatekeyfilesetc=$(timeout 120 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' "$ROOT_FOLDER" 2>/dev/null)
 fi
 
 if [ "$privatekeyfilesetc" ] || [ "$privatekeyfileshome" ] || [ "$privatekeyfilesroot" ] || [ "$privatekeyfilesmnt" ] ; then
@@ -238,7 +277,7 @@ if ssh-add -l 2>/dev/null | grep -qv 'no identities'; then
   ssh-add -l
   echo ""
 fi
-if gpg-connect-agent "keyinfo --list" /bye | grep "D - - 1"; then
+if gpg-connect-agent "keyinfo --list" /bye 2>/dev/null | grep "D - - 1"; then
   print_3title "Listing gpg keys cached in gpg-agent"
   gpg-connect-agent "keyinfo --list" /bye
   echo ""
@@ -255,29 +294,29 @@ fi
 if [ "$hostsdenied" ]; then
   print_3title "/etc/hosts.denied file found, read the rules:"
   printf "$hostsdenied\n"
-  cat "/etc/hosts.denied" 2>/dev/null | grep -v "#" | grep -Iv "^$" | sed -${E} "s,.*,${SED_GREEN},"
+  cat " ${ROOT_FOLDER}etc/hosts.denied" 2>/dev/null | grep -v "#" | grep -Iv "^$" | sed -${E} "s,.*,${SED_GREEN},"
   echo ""
 fi
 if [ "$hostsallow" ]; then
   print_3title "/etc/hosts.allow file found, trying to read the rules:"
   printf "$hostsallow\n"
-  cat "/etc/hosts.allow" 2>/dev/null | grep -v "#" | grep -Iv "^$" | sed -${E} "s,.*,${SED_RED},"
+  cat " ${ROOT_FOLDER}etc/hosts.allow" 2>/dev/null | grep -v "#" | grep -Iv "^$" | sed -${E} "s,.*,${SED_RED},"
   echo ""
 fi
 if [ "$sshconfig" ]; then
   echo ""
   echo "Searching inside /etc/ssh/ssh_config for interesting info"
-  grep -v "^#" /etc/ssh/ssh_config 2>/dev/null | grep -Ev "\W+\#|^#" 2>/dev/null | grep -Iv "^$" | sed -${E} "s,Host|ForwardAgent|User|ProxyCommand,${SED_RED},"
+  grep -v "^#"  ${ROOT_FOLDER}etc/ssh/ssh_config 2>/dev/null | grep -Ev "\W+\#|^#" 2>/dev/null | grep -Iv "^$" | sed -${E} "s,Host|ForwardAgent|User|ProxyCommand,${SED_RED},"
 fi
 echo ""
 
 peass{PAM Auth}
 
 #-- SI) Passwords inside pam.d
-pamdpass=$(grep -Ri "passwd" /etc/pam.d/ 2>/dev/null | grep -v ":#")
+pamdpass=$(grep -Ri "passwd"  ${ROOT_FOLDER}etc/pam.d/ 2>/dev/null | grep -v ":#")
 if [ "$pamdpass" ] || [ "$DEBUG" ]; then
   print_2title "Passwords inside pam.d"
-  grep -Ri "passwd" /etc/pam.d/ 2>/dev/null | grep -v ":#" | sed "s,passwd,${SED_RED},"
+  grep -Ri "passwd"  ${ROOT_FOLDER}etc/pam.d/ 2>/dev/null | grep -v ":#" | sed "s,passwd,${SED_RED},"
   echo ""
 fi
 
@@ -288,7 +327,7 @@ kadmin_exists="$(command -v kadmin)"
 klist_exists="$(command -v klist)"
 if [ "$kadmin_exists" ] || [ "$klist_exists" ] || [ "$PSTORAGE_KERBEROS" ] || [ "$DEBUG" ]; then
   print_2title "Searching kerberos conf files and tickets"
-  print_info "http://book.hacktricks.xyz/linux-unix/privilege-escalation/linux-active-directory"
+  print_info "http://book.hacktricks.xyz/linux-hardening/privilege-escalation/linux-active-directory"
 
   if [ "$kadmin_exists" ]; then echo "kadmin was found on $kadmin_exists" | sed "s,$kadmin_exists,${SED_RED},"; fi
   if [ "$klist_exists" ] && [ -x "$klist_exists" ]; then echo "klist execution"; klist; fi
@@ -378,9 +417,9 @@ if [ "$adhashes" ] || [ "$DEBUG" ]; then
 fi
 
 #-- SI) Screen sessions
-if [ "$screensess" ] || [ "$screensess2" ] || [ "$DEBUG" ]; then
+if ([ "$screensess" ] || [ "$screensess2" ] || [ "$DEBUG" ]) && ! [ "$SEARCH_IN_FOLDER" ]; then
   print_2title "Searching screen sessions"
-  print_info "https://book.hacktricks.xyz/linux-unix/privilege-escalation#open-shell-sessions"
+  print_info "https://book.hacktricks.xyz/linux-hardening/privilege-escalation#open-shell-sessions"
   screensess=$(screen -ls 2>/dev/null)
   screensess2=$(find /run/screen -type d -path "/run/screen/S-*" 2>/dev/null)
   
@@ -397,9 +436,9 @@ fi
 tmuxdefsess=$(tmux ls 2>/dev/null)
 tmuxnondefsess=$(ps auxwww | grep "tmux " | grep -v grep)
 tmuxsess2=$(find /tmp -type d -path "/tmp/tmux-*" 2>/dev/null)
-if [ "$tmuxdefsess" ] || [ "$tmuxnondefsess" ] || [ "$tmuxsess2" ] || [ "$DEBUG" ]; then
+if ([ "$tmuxdefsess" ] || [ "$tmuxnondefsess" ] || [ "$tmuxsess2" ] || [ "$DEBUG" ]) && ! [ "$SEARCH_IN_FOLDER" ]; then
   print_2title "Searching tmux sessions"$N
-  print_info "https://book.hacktricks.xyz/linux-unix/privilege-escalation#open-shell-sessions"
+  print_info "https://book.hacktricks.xyz/linux-hardening/privilege-escalation#open-shell-sessions"
   tmux -V
   printf "$tmuxdefsess\n$tmuxnondefsess\n$tmuxsess2" | sed -${E} "s,.*,${SED_RED}," | sed -${E} "s,no server running on.*,${C}[32m&${C}[0m,"
 
@@ -434,6 +473,12 @@ fi
 peass{Mosquitto}
 
 peass{Neo4j}
+
+AWSVAULT="$(command -v aws-vault 2>/dev/null)"
+if [ "$AWSVAULT" ] || [ "$DEBUG" ]; then
+  print_2title "Check aws-vault"
+  aws-vault list
+fi
 
 peass{Cloud Credentials}
 
@@ -523,50 +568,46 @@ peass{Cache Vi}
 peass{Wget}
 
 ##-- SI) containerd installed
-containerd=$(command -v ctr)
-if [ "$containerd" ] || [ "$DEBUG" ]; then
-  print_2title "Checking if containerd(ctr) is available"
-  print_info "https://book.hacktricks.xyz/linux-unix/privilege-escalation/containerd-ctr-privilege-escalation"
-  if [ "$containerd" ]; then
-    echo "ctr was found in $containerd, you may be able to escalate privileges with it" | sed -${E} "s,.*,${SED_RED},"
-    ctr image list
+if ! [ "$SEARCH_IN_FOLDER" ]; then
+  containerd=$(command -v ctr)
+  if [ "$containerd" ] || [ "$DEBUG" ]; then
+    print_2title "Checking if containerd(ctr) is available"
+    print_info "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/containerd-ctr-privilege-escalation"
+    if [ "$containerd" ]; then
+      echo "ctr was found in $containerd, you may be able to escalate privileges with it" | sed -${E} "s,.*,${SED_RED},"
+      ctr image list 2>&1
+    fi
+    echo ""
   fi
-  echo ""
 fi
 
 ##-- SI) runc installed
-runc=$(command -v runc)
-if [ "$runc" ] || [ "$DEBUG" ]; then
-  print_2title "Checking if runc is available"
-  print_info "https://book.hacktricks.xyz/linux-unix/privilege-escalation/runc-privilege-escalation"
-  if [ "$runc" ]; then
-    echo "runc was found in $runc, you may be able to escalate privileges with it" | sed -${E} "s,.*,${SED_RED},"
+if ! [ "$SEARCH_IN_FOLDER" ]; then
+  runc=$(command -v runc)
+  if [ "$runc" ] || [ "$DEBUG" ]; then
+    print_2title "Checking if runc is available"
+    print_info "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/runc-privilege-escalation"
+    if [ "$runc" ]; then
+      echo "runc was found in $runc, you may be able to escalate privileges with it" | sed -${E} "s,.*,${SED_RED},"
+    fi
+    echo ""
   fi
-  echo ""
 fi
 
 #-- SI) Docker
 if [ "$PSTORAGE_DOCKER" ] || [ "$DEBUG" ]; then
   print_2title "Searching docker files (limit 70)"
-  print_info "https://book.hacktricks.xyz/linux-unix/privilege-escalation#writable-docker-socket"
+  print_info "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-breakout/docker-breakout-privilege-escalation"
   printf "%s\n" "$PSTORAGE_DOCKER" | head -n 70 | while read f; do
     ls -l "$f" 2>/dev/null
     if ! [ "$IAMROOT" ] && [ -S "$f" ] && [ -w "$f" ]; then
-      echo "Docker socket file ($f) is writable" | sed -${E} "s,.*,${SED_RED_YELLOW},"
+      echo "Docker related socket ($f) is writable" | sed -${E} "s,.*,${SED_RED_YELLOW},"
     fi
   done
   echo ""
 fi
 
-if [ -d "$HOME/.kube" ] || [ -d "/etc/kubernetes" ] || [ -d "/var/lib/localkube" ] || [ "`(env | set) | grep -Ei 'kubernetes|kube' | grep -v "PSTORAGE_KUBELET|USEFUL_SOFTWARE"`" ] || [ "$DEBUG" ]; then
-  print_2title "Kubernetes information" | sed -${E} "s,config,${SED_RED},"
-  ls -l "$HOME/.kube" 2>/dev/null
-  grep -ERH "client-secret:|id-token:|refresh-token:" "$HOME/.kube" 2>/dev/null | sed -${E} "s,client-secret:.*|id-token:.*|refresh-token:.*,${SED_RED},"
-  (env || set) | grep -Ei "kubernetes|kube" | grep -v "PSTORAGE_KUBELET|USEFUL_SOFTWARE" | sed -${E} "s,kubernetes|kube,${SED_RED},"
-  ls -Rl /etc/kubernetes /var/lib/localkube 2>/dev/null
-fi
-
-peass{Kubelet}
+peass{Kubernetes}
 
 peass{Firefox}
 
@@ -622,6 +663,20 @@ peass{EXTRA_SECTIONS}
 
 peass{Interesting logs}
 
-peass{Windows Files}
+peass{Windows}
 
-peass{Other Interesting Files}
+peass{Other Interesting}
+
+if ! [ "$FAST" ] && ! [ "$SUPERFAST" ] && [ "$TIMEOUT" ]; then
+  print_2title "Checking leaks in git repositories"
+  printf "%s\n" "$PSTORAGE_GITHUB" | while read f; do
+    if echo "$f" | grep -Eq ".git$"; then
+      git_dirname=$(dirname "$f")
+      if [ "$MACPEAS" ]; then
+        execBin "GitLeaks (checking $git_dirname)" "https://github.com/zricethezav/gitleaks" "$FAT_LINPEAS_GITLEAKS_MACOS" "detect -s '$git_dirname' -v | grep -E 'Description|Match|Secret|Message|Date'"
+      else
+        execBin "GitLeaks (checking $git_dirname)" "https://github.com/zricethezav/gitleaks" "$FAT_LINPEAS_GITLEAKS_LINUX" "detect -s '$git_dirname' -v | grep -E 'Description|Match|Secret|Message|Date'"
+      fi
+    fi
+  done
+fi

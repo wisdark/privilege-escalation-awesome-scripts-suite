@@ -3,7 +3,7 @@
 These scripts allows you to transform the output of linpeas/macpeas/winpeas to JSON and then to PDF and HTML.
 
 ```python3
-python3 peass2json.py </path/to/executed_peass.out> </path/to/peass.json>
+python3 peas2json.py </path/to/executed_peass.out> </path/to/peass.json>
 python3 json2pdf.py </path/to/peass.json> </path/to/peass.pdf>
 python3 json2html.py </path/to/peass.json> </path/to/peass.html>
 ```
@@ -38,7 +38,7 @@ There is a **maximun of 3 levels of sections**.
           }
         ],
         "infos": [
-          "https://book.hacktricks.xyz/linux-unix/privilege-escalation#kernel-exploits"
+          "https://book.hacktricks.xyz/linux-hardening/privilege-escalation#kernel-exploits"
         ]
       },
       "infos": []
@@ -65,7 +65,7 @@ There is a **maximun of 3 levels of sections**.
           }
         ],
         "infos": [
-          "https://book.hacktricks.xyz/linux-unix/privilege-escalation#kernel-exploits"
+          "https://book.hacktricks.xyz/linux-hardening/privilege-escalation#kernel-exploits"
         ]
       },
       "infos": []
@@ -73,6 +73,8 @@ There is a **maximun of 3 levels of sections**.
 
 
 There can also be a `<Third level Section Name>`
+
+If you need to transform several outputs check out https://github.com/mnemonic-re/parsePEASS
 
 # TODO:
 

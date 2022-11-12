@@ -53,7 +53,7 @@ fi
 
 #-- NI) Ports
 print_2title "Active Ports"
-print_info "https://book.hacktricks.xyz/linux-unix/privilege-escalation#open-ports"
+print_info "https://book.hacktricks.xyz/linux-hardening/privilege-escalation#open-ports"
 ( (netstat -punta || ss -nltpu || netstat -anv) | grep -i listen) 2>/dev/null | sed -${E} "s,127.0.[0-9]+.[0-9]+|:::|::1:|0\.0\.0\.0,${SED_RED},"
 echo ""
 
@@ -92,14 +92,14 @@ fi
 print_2title "Can I sniff with tcpdump?"
 timeout 1 tcpdump >/dev/null 2>&1
 if [ $? -eq 124 ]; then #If 124, then timed out == It worked
-    print_info "https://book.hacktricks.xyz/linux-unix/privilege-escalation#sniffing"
+    print_info "https://book.hacktricks.xyz/linux-hardening/privilege-escalation#sniffing"
     echo "You can sniff with tcpdump!" | sed -${E} "s,.*,${SED_RED},"
 else echo_no
 fi
 echo ""
 
 #-- NI) Internet access
-if ! [ "$SUPERFAST" ] && [ "$EXTRA_CHECKS" ] && ! [ "$FAST" ] && [ "$TIMEOUT" ] && [ -f "/bin/bash" ]; then
+if [ "$AUTO_NETWORK_SCAN" ] && [ "$TIMEOUT" ] && [ -f "/bin/bash" ]; then
   print_2title "Internet Access?"
   check_tcp_80 2>/dev/null &
   check_tcp_443 2>/dev/null &
@@ -109,9 +109,13 @@ if ! [ "$SUPERFAST" ] && [ "$EXTRA_CHECKS" ] && ! [ "$FAST" ] && [ "$TIMEOUT" ] 
   echo ""
 fi
 
-if ! [ "$FAST" ] && ! [ "$SUPERFAST" ] || [ "$AUTO_NETWORK_SCAN" ]; then
-  if ! [ "$FOUND_NC" ]; then
+if [ "$AUTO_NETWORK_SCAN" ]; then
+  if ! [ "$FOUND_NC" ] && ! [ "$FOUND_BASH" ]; then
     printf $RED"[-] $SCAN_BAN_BAD\n$NC"
+    echo "The network is not going to be scanned..."
+  
+  elif ! [ "$(command -v ifconfig)" ] && ! [ "$(command -v ip a)" ]; then
+    printf $RED"[-] No ifconfig or ip commands, cannot find local ips\n$NC"
     echo "The network is not going to be scanned..."
   
   else
@@ -122,7 +126,7 @@ if ! [ "$FAST" ] && ! [ "$SUPERFAST" ] || [ "$AUTO_NETWORK_SCAN" ]; then
     fi
 
     select_nc
-    local_ips=$(ip a | grep -Eo 'inet[^6]\S+[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '{print $2}' | grep -E "^10\.|^172\.|^192\.168\.|^169\.254\.")
+    local_ips=$( (ip a 2>/dev/null || ifconfig) | grep -Eo 'inet[^6]\S+[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk '{print $2}' | grep -E "^10\.|^172\.|^192\.168\.|^169\.254\.")
     printf "%s\n" "$local_ips" | while read local_ip; do
       if ! [ -z "$local_ip" ]; then
         print_3title "Discovering hosts in $local_ip/24"
@@ -151,6 +155,10 @@ if ! [ "$FAST" ] && ! [ "$SUPERFAST" ] || [ "$AUTO_NETWORK_SCAN" ]; then
         echo ""
       fi
     done
+    
+    print_3title "Scanning top ports of host.docker.internal"
+    (tcp_port_scan "host.docker.internal" "" | grep -A 1000 "Ports going to be scanned" | grep -v "Ports going to be scanned" | sort | uniq) 2>/dev/null
+    echo ""
   fi
 fi
 
