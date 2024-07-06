@@ -4,11 +4,19 @@ COLOR 0F
 CALL :SetOnce
 
 REM :: WinPEAS - Windows local Privilege Escalation Awesome Script
-REM :: Code by carlospolop; Re-Write by ThisLimn0
+REM :: Code by PEASS-ng; Re-Write by ThisLimn0
 
 REM Registry scan of other drives besides 
 REM /////true or false
 SET long=false
+
+REM Check if the current path contains spaces
+SET "CurrentFolder=%~dp0"
+IF "!CurrentFolder!" NEQ "!CurrentFolder: =!" (
+    ECHO winPEAS.bat cannot run if the current path contains spaces.
+	ECHO Exiting.
+    EXIT /B 1
+)
 
 :Splash
 ECHO.
@@ -38,7 +46,7 @@ CALL :ColorLine "   %E%32m(((((((((. ,%E%92m(############################(%E%32m
 CALL :ColorLine "       %E%32m(((((((((/,  %E%92m,####################(%E%32m/..((((((((((.%E%97m"
 CALL :ColorLine "             %E%32m(((((((((/,.  %E%92m,*//////*,.%E%32m ./(((((((((((.%E%97m"
 CALL :ColorLine "                %E%32m(((((((((((((((((((((((((((/%E%97m"
-ECHO.                       by carlospolop
+ECHO.                       by github.com/PEASS-ng
 ECHO.
 ECHO.
 
@@ -52,7 +60,7 @@ CALL :ColorLine "   %E%41mUse it at your own networks and/or with the network ow
 ECHO.
 
 :SystemInfo
-CALL :ColorLine "%E%32m[*]%E%97m BASIC SYSTEM INFO
+CALL :ColorLine "%E%32m[*]%E%97m BASIC SYSTEM INFO"
 CALL :ColorLine " %E%33m[+]%E%97m WINDOWS OS"
 ECHO.   [i] Check for vulnerabilities for the OS version with the applied patches
 ECHO.   [?] https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#kernel-exploits
@@ -355,7 +363,7 @@ CALL :T_Progress 1
 
 :WifiCreds
 CALL :ColorLine " %E%33m[+]%E%97m WIFI"
-for /f "tokens=4 delims=: " %%a in ('netsh wlan show profiles ^| find "Profile "') do (netsh wlan show profiles name=%%a key=clear | findstr "SSID Cipher Content" | find /v "Number" & ECHO.)
+for /f "tokens=3,* delims=: " %%a in ('netsh wlan show profiles ^| find "Profile "') do (netsh wlan show profiles name=%%b key=clear | findstr "SSID Cipher Content" | find /v "Number" & ECHO.)
 CALL :T_Progress 1
 
 :BasicUserInfo
@@ -404,7 +412,7 @@ CALL :T_Progress 1
 
 :CurrentClipboard
 CALL :ColorLine " %E%33m[+]%E%97m CURRENT CLIPBOARD"
-ECHO.   [i] Any password inside the clipboard?
+ECHO.   [i] Any passwords inside the clipboard?
 powershell -command "Get-Clipboard" 2>nul
 ECHO.
 CALL :T_Progress 1
@@ -565,7 +573,7 @@ CALL :T_Progress 2
 
 :AppCMD
 CALL :ColorLine " %E%33m[+]%E%97m AppCmd"
-ECHO.   [?] https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#appcmd-exe
+ECHO.   [?] https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#appcmd.exe
 IF EXIST %systemroot%\system32\inetsrv\appcmd.exe ECHO.%systemroot%\system32\inetsrv\appcmd.exe exists. 
 ECHO.
 CALL :T_Progress 2

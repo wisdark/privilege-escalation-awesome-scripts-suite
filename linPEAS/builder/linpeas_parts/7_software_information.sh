@@ -45,7 +45,7 @@ if [ "$MACPEAS" ]; then
     done
 fi
 
-#-- SI) Mysql version
+#-- SI) MySQL version
 if [ "$(command -v mysql)" ] || [ "$(command -v mysqladmin)" ] || [ "$DEBUG" ]; then
   print_2title "MySQL version"
   mysql --version 2>/dev/null || echo_not_found "mysql"
@@ -56,7 +56,7 @@ if [ "$(command -v mysql)" ] || [ "$(command -v mysqladmin)" ] || [ "$DEBUG" ]; 
   echo ""
   echo ""
 
-  #-- SI) Mysql connection root/root
+  #-- SI) MySQL connection root/root
   print_list "MySQL connection using default root/root ........... "
   mysqlconnect=$(mysqladmin -uroot -proot version 2>/dev/null)
   if [ "$mysqlconnect" ]; then
@@ -65,7 +65,7 @@ if [ "$(command -v mysql)" ] || [ "$(command -v mysqladmin)" ] || [ "$DEBUG" ]; 
   else echo_no
   fi
 
-  #-- SI) Mysql connection root/toor
+  #-- SI) MySQL connection root/toor
   print_list "MySQL connection using root/toor ................... "
   mysqlconnect=$(mysqladmin -uroot -ptoor version 2>/dev/null)
   if [ "$mysqlconnect" ]; then
@@ -74,7 +74,7 @@ if [ "$(command -v mysql)" ] || [ "$(command -v mysqladmin)" ] || [ "$DEBUG" ]; 
   else echo_no
   fi
 
-  #-- SI) Mysql connection root/NOPASS
+  #-- SI) MySQL connection root/NOPASS
   mysqlconnectnopass=$(mysqladmin -uroot version 2>/dev/null)
   print_list "MySQL connection using root/NOPASS ................. "
   if [ "$mysqlconnectnopass" ]; then
@@ -85,7 +85,7 @@ if [ "$(command -v mysql)" ] || [ "$(command -v mysqladmin)" ] || [ "$DEBUG" ]; 
   echo ""
 fi
 
-#-- SI) Mysql credentials
+#-- SI) MySQL credentials
 if [ "$PSTORAGE_MYSQL" ] || [ "$DEBUG" ]; then
   print_2title "Searching mysql credentials and exec"
   printf "%s\n" "$PSTORAGE_MYSQL" | while read d; do
@@ -129,9 +129,9 @@ if [ "$PSTORAGE_MYSQL" ] || [ "$DEBUG" ]; then
       done
     fi
     
-    mysqlexec=$(whereis lib_mysqludf_sys.so 2>/dev/null | grep "lib_mysqludf_sys\.so")
+    mysqlexec=$(whereis lib_mysqludf_sys.so 2>/dev/null | grep -Ev '^lib_mysqludf_sys.so:$' | grep "lib_mysqludf_sys\.so")
     if [ "$mysqlexec" ]; then
-      echo "Found $mysqlexec"
+      echo "Found $mysqlexec. $(whereis lib_mysqludf_sys.so)"
       echo "If you can login in MySQL you can execute commands doing: SELECT sys_eval('id');" | sed -${E} "s,.*,${SED_RED},"
     fi
   done
@@ -144,7 +144,7 @@ peass{PostgreSQL}
 
 #-- SI) PostgreSQL brute
 if [ "$TIMEOUT" ] && [ "$(command -v psql)" ] || [ "$DEBUG" ]; then  # In some OS (like OpenBSD) it will expect the password from console and will pause the script. Also, this OS doesn't have the "timeout" command so lets only use this checks in OS that has it.
-#checks to see if any postgres password exists and connects to DB 'template0' - following commands are a variant on this
+# Checks to see if any postgres password exists and connects to DB 'template0' - following commands are a variant on this
   print_list "PostgreSQL connection to template0 using postgres/NOPASS ........ "
   if [ "$(timeout 1 psql -U postgres -d template0 -c 'select version()' 2>/dev/null)" ]; then echo "Yes" | sed -${E} "s,.*,${SED_RED},"
   else echo_no
@@ -239,7 +239,7 @@ if ! [ "$SEARCH_IN_FOLDER" ]; then
     privatekeyfilesroot=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /root 2>/dev/null)
     privatekeyfilesmnt=$(timeout 40 grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /mnt 2>/dev/null)
   else
-    privatekeyfilesetc=$(grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /etc 2>/dev/null) #If there is tons of files linpeas gets frozen here without a timeout
+    privatekeyfilesetc=$(grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' /etc 2>/dev/null) # If there is tons of files linpeas gets frozen here without a timeout
     privatekeyfileshome=$(grep -rl '\-\-\-\-\-BEGIN .* PRIVATE KEY.*\-\-\-\-\-' $HOME/.ssh 2>/dev/null)
   fi
 else
@@ -325,16 +325,20 @@ peass{NFS Exports}
 #-- SI) Kerberos
 kadmin_exists="$(command -v kadmin)"
 klist_exists="$(command -v klist)"
-if [ "$kadmin_exists" ] || [ "$klist_exists" ] || [ "$PSTORAGE_KERBEROS" ] || [ "$DEBUG" ]; then
+kinit_exists="$(command -v kinit)"
+if [ "$kadmin_exists" ] || [ "$klist_exists" ] || [ "$kinit_exists" ] || [ "$PSTORAGE_KERBEROS" ] || [ "$DEBUG" ]; then
   print_2title "Searching kerberos conf files and tickets"
   print_info "http://book.hacktricks.xyz/linux-hardening/privilege-escalation/linux-active-directory"
 
   if [ "$kadmin_exists" ]; then echo "kadmin was found on $kadmin_exists" | sed "s,$kadmin_exists,${SED_RED},"; fi
+  if [ "$kinit_exists" ]; then echo "kadmin was found on $kinit_exists" | sed "s,$kinit_exists,${SED_RED},"; fi
   if [ "$klist_exists" ] && [ -x "$klist_exists" ]; then echo "klist execution"; klist; fi
   ptrace_scope="$(cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null)"
   if [ "$ptrace_scope" ] && [ "$ptrace_scope" -eq 0 ]; then echo "ptrace protection is disabled (0), you might find tickets inside processes memory" | sed "s,is disabled,${SED_RED},g";
   else echo "ptrace protection is enabled ($ptrace_scope), you need to disable it to search for tickets inside processes memory" | sed "s,is enabled,${SED_GREEN},g";
   fi
+  
+  (env || printenv) 2>/dev/null | grep -E "^KRB5" | sed -${E} "s,KRB5,${SED_RED},g"
 
   printf "%s\n" "$PSTORAGE_KERBEROS" | while read f; do
     if [ -r "$f" ]; then
@@ -348,8 +352,8 @@ if [ "$kadmin_exists" ] || [ "$klist_exists" ] || [ "$PSTORAGE_KERBEROS" ] || [ 
         printf "$(klist -k $f 2>/dev/null)\n" | awk '{print $2}' | while read l; do
           if [ "$l" ] && echo "$l" | grep -q "@"; then
             printf "$ITALIC  --- Impersonation command: ${NC}kadmin -k -t /etc/krb5.keytab -p \"$l\"\n" | sed -${E} "s,$l,${SED_RED},g"
-            #kadmin -k -t /etc/krb5.keytab -p "$l" -q getprivs 2>/dev/null #This should show the permissions of each impersoanted user, the thing is that in a test it showed that every user had the same permissions (even if they didn't). So this test isn't valid
-            #We could also try to create a new user or modify a password, but I'm not user if linpeas should do that
+            # kadmin -k -t /etc/krb5.keytab -p "$l" -q getprivs 2>/dev/null #This should show the permissions of each impersoanted user, the thing is that in a test it showed that every user had the same permissions (even if they didn't). So this test isn't valid
+            # We could also try to create a new user or modify a password, but I'm not user if linpeas should do that
           fi
         done
       elif echo "$f" | grep -q krb5.conf; then
@@ -375,6 +379,8 @@ if [ "$kadmin_exists" ] || [ "$klist_exists" ] || [ "$PSTORAGE_KERBEROS" ] || [ 
   echo ""
 
 fi
+
+peass{FreeIPA}
 
 peass{Knockd}
 
@@ -505,7 +511,7 @@ SPLUNK_BIN="$(command -v splunk 2>/dev/null)"
 if [ "$PSTORAGE_SPLUNK" ] || [ "$SPLUNK_BIN" ] || [ "$DEBUG" ]; then
   print_2title "Searching uncommon passwd files (splunk)"
   if [ "$SPLUNK_BIN" ]; then echo "splunk binary was found installed on $SPLUNK_BIN" | sed "s,.*,${SED_RED},"; fi
-  printf "%s\n" "$PSTORAGE_SPLUNK" | sort | uniq | while read f; do
+  printf "%s\n" "$PSTORAGE_SPLUNK" | grep -v ".htpasswd" | sort | uniq | while read f; do
     if [ -f "$f" ] && ! [ -x "$f" ]; then
       echo "passwd file: $f" | sed "s,$f,${SED_RED},"
       cat "$f" 2>/dev/null | grep "'pass'|'password'|'user'|'database'|'host'|\$" | sed -${E} "s,password|pass|user|database|host|\$,${SED_RED},"
@@ -527,7 +533,7 @@ fi
 ##-- SI) Gitlab
 if [ "$(command -v gitlab-rails)" ] || [ "$(command -v gitlab-backup)" ] || [ "$PSTORAGE_GITLAB" ] || [ "$DEBUG" ]; then
   print_2title "Searching GitLab related files"
-  #Check gitlab-rails
+  # Check gitlab-rails
   if [ "$(command -v gitlab-rails)" ]; then
     echo "gitlab-rails was found. Trying to dump users..."
     gitlab-rails runner 'User.where.not(username: "peasssssssss").each { |u| pp u.attributes }' | sed -${E} "s,email|password,${SED_RED},"
@@ -540,7 +546,7 @@ if [ "$(command -v gitlab-rails)" ] || [ "$(command -v gitlab-backup)" ] || [ "$
     echo "Then you can get the plain-text with something like 'git clone \@hashed/19/23/14348274[...]38749234.bundle'"
     echo ""
   fi
-  #Check gitlab files
+  # Check gitlab files
   printf "%s\n" "$PSTORAGE_GITLAB" | sort | uniq | while read f; do
     if echo $f | grep -q secrets.yml; then
       echo "Found $f" | sed "s,$f,${SED_RED},"
