@@ -25,6 +25,9 @@ sidB="/apache2$%Read_root_passwd__apache2_-f_/etc/shadow\(CVE-2019-0211\)\
  /dtappgather$%Solaris_7_<_11_\(SPARC/x86\)\(CVE-2017-3622\)\
  /dtprintinfo$%Solaris_10_\(x86\)_and_lower_versions_also_SunOS_5.7_to_5.10\
  /dtsession$%Oracle_Solaris_10_1/13_and_earlier\(CVE-2020-2696\)\
+ /enlightenment_backlight$%Before_0.25.4_\(CVE-2022-37706\)\
+ /enlightenment_ckpasswd$%Before_0.25.4_\(CVE-2022-37706\)\
+ /enlightenment_sys$%Before_0.25.4_\(CVE-2022-37706\)\
  /eject$%FreeBSD_mcweject_0.9/SGI_IRIX_6.2\
  /ibstat$%IBM_AIX_Version_6.1/7.1\(09-2013\)\
  /kcheckpass$%KDE_3.2.0_<-->_3.4.2_\(both_included\)\
@@ -42,7 +45,7 @@ sidB="/apache2$%Read_root_passwd__apache2_-f_/etc/shadow\(CVE-2019-0211\)\
  /newgrp$%HP-UX_10.20\
  /ntfs-3g$%Debian9/8/7/Ubuntu/Gentoo/others/Ubuntu_Server_16.10_and_others\(02-2017\)\
  /passwd$%Apple_Mac_OSX\(03-2006\)/Solaris_8/9\(12-2004\)/SPARC_8/9/Sun_Solaris_2.3_to_2.5.1\(02-1997\)\
- /pkexec$%Linux4.10_to_5.1.17\(CVE-2019-13272\)/rhel_6\(CVE-2011-1485\)\
+ /pkexec$%Linux4.10_to_5.1.17\(CVE-2019-13272\)/rhel_6\(CVE-2011-1485\)/Generic_CVE-2021-4034\
  /pppd$%Apple_Mac_OSX_10.4.8\(05-2007\)\
  /pt_chown$%GNU_glibc_2.1/2.1.1_-6\(08-1999\)\
  /pulseaudio$%\(Ubuntu_9.04/Slackware_12.2.0\)\

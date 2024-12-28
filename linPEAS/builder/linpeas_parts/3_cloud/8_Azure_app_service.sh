@@ -13,17 +13,16 @@
 # Small linpeas: 0
 
 
-API_VERSION="2021-12-13" #https://learn.microsoft.com/en-us/azure/virtual-machines/instance-metadata-service?tabs=linux#supported-api-versions
+API_VERSION="2019-08-01" #https://learn.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=portal%2Chttp
 
 if [ "$is_az_app" = "Yes" ]; then
   print_2title "Azure App Service Enumeration"
-  echo "I haven't tested this one, if it doesn't work, please send a PR fixing and adding functionality :)"
 
-  HEADER="secret:$IDENTITY_HEADER"
+  HEADER="X-IDENTITY-HEADER:$IDENTITY_HEADER"
 
   az_req=""
   if [ "$(command -v curl || echo -n '')" ]; then
-      az_req="curl -s -f -H '$HEADER'"
+      az_req="curl -s -f -L -H '$HEADER'"
   elif [ "$(command -v wget || echo -n '')" ]; then
       az_req="wget -q -O - -H '$HEADER'"
   else 
@@ -33,13 +32,13 @@ if [ "$is_az_app" = "Yes" ]; then
   if [ "$az_req" ]; then
     print_3title "Management token"
     exec_with_jq eval $az_req "$IDENTITY_ENDPOINT?api-version=$API_VERSION\&resource=https://management.azure.com/"
-
+    echo
     print_3title "Graph token"
     exec_with_jq eval $az_req "$IDENTITY_ENDPOINT?api-version=$API_VERSION\&resource=https://graph.microsoft.com/"
-    
+    echo
     print_3title "Vault token"
     exec_with_jq eval $az_req "$IDENTITY_ENDPOINT?api-version=$API_VERSION\&resource=https://vault.azure.net/"
-
+    echo
     print_3title "Storage token"
     exec_with_jq eval $az_req "$IDENTITY_ENDPOINT?api-version=$API_VERSION\&resource=https://storage.azure.com/"
   fi

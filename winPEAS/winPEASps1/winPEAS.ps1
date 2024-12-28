@@ -67,7 +67,8 @@ Function Start-ACLCheck {
       $Identity = @()
       $Identity += "$env:COMPUTERNAME\$env:USERNAME"
       if ($ACLObject.Owner -like $Identity ) { Write-Host "$Identity has ownership of $Target" -ForegroundColor Red }
-      whoami.exe /groups /fo csv | ConvertFrom-Csv | Select-Object -ExpandProperty 'group name' | ForEach-Object { $Identity += $_ }
+      # This should now work for any language. Command runs whoami group, removes the first two line of output, converts from csv to object, but adds "group name" to the first column.
+      whoami.exe /groups /fo csv | select-object -skip 2 | ConvertFrom-Csv -Header 'group name' | Select-Object -ExpandProperty 'group name' | ForEach-Object { $Identity += $_ }
       $IdentityFound = $false
       foreach ($i in $Identity) {
         $permission = $ACLObject.Access | Where-Object { $_.IdentityReference -like $i }
@@ -1225,7 +1226,8 @@ Write-Host "Will enumerate SMB Shares and Access if any are available"
 
 Get-SmbShare | Get-SmbShareAccess | ForEach-Object {
   $SMBShareObject = $_
-  whoami.exe /groups /fo csv | ConvertFrom-Csv | Select-Object -ExpandProperty 'group name' | ForEach-Object {
+# see line 70 for explanation of what this does
+  whoami.exe /groups /fo csv | select-object -skip 2 | ConvertFrom-Csv -Header 'group name' | Select-Object -ExpandProperty 'group name' | ForEach-Object {
     if ($SMBShareObject.AccountName -like $_ -and ($SMBShareObject.AccessRight -like "Full" -or "Change") -and $SMBShareObject.AccessControlType -like "Allow" ) {
       Write-Host -ForegroundColor red "$($SMBShareObject.AccountName) has $($SMBShareObject.AccessRight) to $($SMBShareObject.Name)"
     }
@@ -1237,16 +1239,14 @@ Get-SmbShare | Get-SmbShareAccess | ForEach-Object {
 Write-Host ""
 if ($TimeStamp) { TimeElapsed }
 Write-Host -ForegroundColor Blue "=========|| USER INFO"
-Write-Host "== || Generating List of all Administrators, Users and Backup Operators (if any exist)"
+Write-Host "== || Generating List of all Local Administrators, Users and Backup Operators (if any exist)"
 
-@("ADMINISTRATORS", "USERS") | ForEach-Object {
-  Write-Host $_
-  Write-Host "-------"
-  Start-Process net -ArgumentList "localgroup $_" -Wait -NoNewWindow
-}
-Write-Host "BACKUP OPERATORS"
-Write-Host "-------"
-Start-Process net -ArgumentList 'localgroup "Backup Operators"' -Wait -NoNewWindow
+# Code has been modified to accomodate for any language by filtering only on the output and not looking for a string of text
+# Foreach loop to get all local groups, then examine each group's members.
+Get-LocalGroup | ForEach-Object {
+  "`n Group: $($_.Name) `n" ; if(Get-LocalGroupMember -name $_.Name){
+    (Get-LocalGroupMember -name $_.Name).Name}
+    else{"     {GROUP EMPTY}"}}
 
 
 Write-Host ""
@@ -1282,7 +1282,7 @@ $CCreds = @(".aws\credentials",
   ".azure\azureProfile.json") 
 foreach ($u in $users) {
   $CCreds | ForEach-Object {
-    if (Test-Path "c:\$u\$_") { Write-Host "$_ found!" -ForegroundColor Red }
+    if (Test-Path "c:\Users\$u\$_") { Write-Host "$_ found!" -ForegroundColor Red }
   }
 }
 

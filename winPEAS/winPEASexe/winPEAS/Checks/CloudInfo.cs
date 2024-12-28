@@ -10,11 +10,21 @@ namespace winPEAS.Checks
         {
             Beaprint.GreatPrint("Cloud Information");
 
+            Dictionary<string, string> colorsTraining = new Dictionary<string, string>()
+                {
+                    { "training.hacktricks.xyz", Beaprint.ansi_color_good },
+                    { "Learn & practice cloud hacking in", Beaprint.ansi_color_yellow },
+                };
+            Beaprint.AnsiPrint("Learn and practice cloud hacking in training.hacktricks.xyz", colorsTraining);
+
             var cloudInfoList = new List<CloudInfoBase>
             {
                new AWSInfo(),
                new AzureInfo(),
-               new GCPInfo()
+               new GCPInfo(),
+               new GCPJoinedInfo(),
+               new GCDSInfo(),
+               new GPSInfo(),
             };
 
             foreach (var cloudInfo in cloudInfoList)

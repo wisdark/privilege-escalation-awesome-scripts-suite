@@ -22,7 +22,7 @@ if [ "$is_az_vm" = "Yes" ]; then
   
   az_req=""
   if [ "$(command -v curl || echo -n '')" ]; then
-      az_req="curl -s -f -H '$HEADER'"
+      az_req="curl -s -f -L -H '$HEADER'"
   elif [ "$(command -v wget || echo -n '')" ]; then
       az_req="wget -q -O - -H '$HEADER'"
   else 
@@ -32,21 +32,39 @@ if [ "$is_az_vm" = "Yes" ]; then
   if [ "$az_req" ]; then
     print_3title "Instance details"
     exec_with_jq eval $az_req "$URL/instance?api-version=$API_VERSION"
+    echo ""
 
     print_3title "Load Balancer details"
     exec_with_jq eval $az_req "$URL/loadbalancer?api-version=$API_VERSION"
+    echo ""
+
+    print_3title "User Data"
+    exec_with_jq eval $az_req "$URL/instance/compute/userData?api-version=$API_VERSION\&format=text" | base64 -d 2>/dev/null
+    echo ""
+
+    print_3title "Custom Data and other configs (root needed)"
+    (cat /var/lib/waagent/ovf-env.xml || cat /var/lib/waagent/CustomData/ovf-env.xml) 2>/dev/null | sed "s,CustomData.*,${SED_RED},"
+    echo ""
 
     print_3title "Management token"
+    print_info "It's possible to assign 1 system MI and several user MI to a VM. LinPEAS can only get the token from the default one. More info in https://book.hacktricks.xyz/pentesting-web/ssrf-server-side-request-forgery/cloud-ssrf#azure-vm"
     exec_with_jq eval $az_req "$URL/identity/oauth2/token?api-version=$API_VERSION\&resource=https://management.azure.com/"
+    echo ""
 
     print_3title "Graph token"
+    print_info "It's possible to assign 1 system MI and several user MI to a VM. LinPEAS can only get the token from the default one. More info in https://book.hacktricks.xyz/pentesting-web/ssrf-server-side-request-forgery/cloud-ssrf#azure-vm"
     exec_with_jq eval $az_req "$URL/identity/oauth2/token?api-version=$API_VERSION\&resource=https://graph.microsoft.com/"
+    echo ""
     
     print_3title "Vault token"
+    print_info "It's possible to assign 1 system MI and several user MI to a VM. LinPEAS can only get the token from the default one. More info in https://book.hacktricks.xyz/pentesting-web/ssrf-server-side-request-forgery/cloud-ssrf#azure-vm"
     exec_with_jq eval $az_req "$URL/identity/oauth2/token?api-version=$API_VERSION\&resource=https://vault.azure.net/"
+    echo ""
 
     print_3title "Storage token"
+    print_info "It's possible to assign 1 system MI and several user MI to a VM. LinPEAS can only get the token from the default one. More info in https://book.hacktricks.xyz/pentesting-web/ssrf-server-side-request-forgery/cloud-ssrf#azure-vm"
     exec_with_jq eval $az_req "$URL/identity/oauth2/token?api-version=$API_VERSION\&resource=https://storage.azure.com/"
+    echo ""
   fi
   echo ""
 fi
