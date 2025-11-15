@@ -1,3 +1,30 @@
+# Copyright (c) 2025, PEASS-ng owners
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#   1. Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#   2. Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#   3. Neither the name of PEASS-ng owners nor the names of its
+#      contributors may be used to endorse or promote products derived from
+#      this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
 ##
 # This module requires Metasploit: https://metasploit.com/download
 # Current source: https://github.com/rapid7/metasploit-framework
@@ -37,7 +64,8 @@ class MetasploitModule < Msf::Post
     ))
     register_options(
       [
-        OptString.new('PEASS_URL', [true, 'Path to the PEASS script. Accepted: http(s):// URL or absolute local path. Linpeas: https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh', "https://github.com/peass-ng/PEASS-ng/releases/latest/download/winPEASany_ofs.exe"]),
+        OptString.new('WINPEASS', [true, 'Which PEASS script to use. Use True for WinPeass and false for LinPEASS', true]),
+        OptString.new('CUSTOM_URL', [false, 'URL to download the PEASS script from (if not using the default one). Accepts http(s) or absolute path. Overrides the WINPEASS variable', '']),
         OptString.new('PASSWORD', [false, 'Password to encrypt and obfuscate the script (randomly generated). The length must be 32B. If no password is set, only base64 will be used.', rand(36**32).to_s(36)]),
         OptString.new('TEMP_DIR', [false, 'Path to upload the obfuscated PEASS script inside the compromised machine. By default "C:\Windows\System32\spool\drivers\color" is used in Windows and "/tmp" in Unix.', '']),
         OptString.new('PARAMETERS', [false, 'Parameters to pass to the script', nil]),
@@ -237,8 +265,14 @@ class MetasploitModule < Msf::Post
   def load_peass
     # Load the PEASS script from a local file or from Internet
     peass_script = ""
-    url_peass = datastore['PEASS_URL']
-    
+    url_peass = ""
+    # If no URL is set, use the default one
+    if datastore['CUSTOM_URL'] != ""
+      url_peass = datastore['CUSTOM_URL']
+    else
+      url_peass = datastore['WINPEASS'].to_s.strip.downcase == 'true' ? "https://github.com/peass-ng/PEASS-ng/releases/latest/download/winPEASany_ofs.exe" : "https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh"
+    end
+    # If URL is set, check if it is a valid URL or local file
     if url_peass.include?("http://") || url_peass.include?("https://")
       target = URI.parse url_peass
       raise 'Invalid URL' unless target.scheme =~ /https?/

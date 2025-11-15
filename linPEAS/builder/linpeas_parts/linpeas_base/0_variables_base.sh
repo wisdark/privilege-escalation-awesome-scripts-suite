@@ -83,6 +83,7 @@ AUTO_NETWORK_SCAN=""
 EXTRA_CHECKS=""
 REGEXES=""
 PORT_FORWARD=""
+NOT_CHECK_EXTERNAL_HOSTNAME=""
 THREADS="$( ( (grep -c processor /proc/cpuinfo 2>/dev/null) || ( (command -v lscpu >/dev/null 2>&1) && (lscpu | grep '^CPU(s):' | awk '{print $2}')) || echo -n 2) | tr -d "\n")"
 [ -z "$THREADS" ] && THREADS="2" #If THREADS is empty, put number 2
 [ -n "$THREADS" ] && THREADS="2" #If THREADS is null, put number 2
@@ -96,6 +97,7 @@ ${NC}This tool enum and search possible misconfigurations$DG (known vulns, user,
         ${YELLOW}    -e${BLUE} Perform extra enumeration
         ${YELLOW}    -r${BLUE} Enable Regexes (this can take from some mins to hours)
         ${YELLOW}    -P${BLUE} Indicate a password that will be used to run 'sudo -l' and to bruteforce other users accounts via 'su'
+        ${YELLOW}    -n${BLUE} Do not check hostname & IP in known malicious lists and leaks
 	${YELLOW}    -D${BLUE} Debug mode
 
       ${GREEN}  Network recon:
@@ -128,6 +130,7 @@ while getopts "h?asd:p:i:P:qo:LMwNDterf:F:" opt; do
     p)  PORTS=$OPTARG;;
     i)  IP=$OPTARG;;
     P)  PASSWORD=$OPTARG;;
+    n)  NOT_CHECK_EXTERNAL_HOSTNAME="1";;
     q)  QUIET=1;;
     o)  CHECKS=$OPTARG;;
     L)  MACPEAS="";;
@@ -187,6 +190,9 @@ if [ $? -ne 0 ] ; then
 		echo "${YELLOW}WARNING: No suitable option found for extended regex with sed. Continuing but the results might be unreliable.${NC}"
 	fi
 fi
+
+# on macOS the built-in echo does not support -n, use /bin/echo instead
+if [ "$MACPEAS" ] ; then alias echo=/bin/echo ; fi
 
 print_title(){
   if [ "$DEBUG" ]; then
@@ -343,7 +349,7 @@ print_support () {
     ${GREEN}/---------------------------------------------------------------------------------\\
     |                             ${BLUE}Do you like PEASS?${GREEN}                                  |
     |---------------------------------------------------------------------------------|
-    |         ${YELLOW}Learn Cloud Hacking${GREEN}       :     ${RED}https://training.hacktricks.xyz${GREEN}         |
+    |         ${YELLOW}Learn Cloud Hacking${GREEN}       :     ${RED}https://training.hacktricks.xyz ${GREEN}        |
     |         ${YELLOW}Follow on Twitter${GREEN}         :     ${RED}@hacktricks_live${GREEN}                        |
     |         ${YELLOW}Respect on HTB${GREEN}            :     ${RED}SirBroccoli            ${GREEN}                 |
     |---------------------------------------------------------------------------------|
@@ -362,7 +368,7 @@ printf ${BLUE}"          $SCRIPTNAME-$VERSION ${YELLOW}by carlospolop\n"$NC;
 echo ""
 printf ${YELLOW}"ADVISORY: ${BLUE}$ADVISORY\n$NC"
 echo ""
-printf ${BLUE}"Linux Privesc Checklist: ${YELLOW}https://book.hacktricks.xyz/linux-hardening/linux-privilege-escalation-checklist\n"$NC
+printf ${BLUE}"Linux Privesc Checklist: ${YELLOW}https://book.hacktricks.wiki/en/linux-hardening/linux-privilege-escalation-checklist.html\n"$NC
 echo " LEGEND:" | sed "s,LEGEND,${C}[1;4m&${C}[0m,"
 echo "  RED/YELLOW: 95% a PE vector" | sed "s,RED/YELLOW,${SED_RED_YELLOW},"
 echo "  RED: You should take a look to it" | sed "s,RED,${SED_RED},"

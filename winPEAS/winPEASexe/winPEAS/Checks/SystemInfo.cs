@@ -84,6 +84,7 @@ namespace winPEAS.Checks
                 PrintLSAInfo,
                 PrintNtlmSettings,
                 PrintLocalGroupPolicy,
+                PrintPotentialGPOAbuse,
                 AppLockerHelper.PrintAppLockerPolicy,
                 PrintPrintersWMIInfo,
                 PrintNamedPipes,
@@ -98,7 +99,7 @@ namespace winPEAS.Checks
             try
             {
                 Beaprint.MainPrint("Basic System Information");
-                Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#kernel-exploits", "Check if the Windows versions is vulnerable to some known exploit");
+                Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#version-exploits", "Check if the Windows versions is vulnerable to some known exploit");
                 Dictionary<string, string> basicDictSystem = Info.SystemInfo.SystemInfo.GetBasicOSInfo();
                 basicDictSystem["Hotfixes"] = Beaprint.ansi_color_good + basicDictSystem["Hotfixes"] + Beaprint.NOCOLOR;
                 Dictionary<string, string> colorsSI = new Dictionary<string, string>
@@ -337,7 +338,7 @@ namespace winPEAS.Checks
         static void PrintWdigest()
         {
             Beaprint.MainPrint("Wdigest");
-            Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/stealing-credentials/credentials-protections#wdigest", "If enabled, plain-text crds could be stored in LSASS");
+            Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#wdigest", "If enabled, plain-text crds could be stored in LSASS");
             string useLogonCredential = RegistryHelper.GetRegValue("HKLM", @"SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest", "UseLogonCredential");
             if (useLogonCredential == "1")
                 Beaprint.BadPrint("    Wdigest is active");
@@ -348,7 +349,7 @@ namespace winPEAS.Checks
         static void PrintLSAProtection()
         {
             Beaprint.MainPrint("LSA Protection");
-            Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/stealing-credentials/credentials-protections#lsa-protection", "If enabled, a driver is needed to read LSASS memory (If Secure Boot or UEFI, RunAsPPL cannot be disabled by deleting the registry key)");
+            Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#lsa-protection", "If enabled, a driver is needed to read LSASS memory (If Secure Boot or UEFI, RunAsPPL cannot be disabled by deleting the registry key)");
             string useLogonCredential = RegistryHelper.GetRegValue("HKLM", @"SYSTEM\CurrentControlSet\Control\LSA", "RunAsPPL");
             if (useLogonCredential == "1")
                 Beaprint.GoodPrint("    LSA Protection is active");
@@ -359,7 +360,7 @@ namespace winPEAS.Checks
         static void PrintCredentialGuard()
         {
             Beaprint.MainPrint("Credentials Guard");
-            Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/stealing-credentials/credentials-protections#credential-guard", "If enabled, a driver is needed to read LSASS memory");
+            Beaprint.LinkPrint("https://book.hacktricks.wiki/windows-hardening/stealing-credentials/credentials-protections#credentials-guard", "If enabled, a driver is needed to read LSASS memory");
             string lsaCfgFlags = RegistryHelper.GetRegValue("HKLM", @"System\CurrentControlSet\Control\LSA", "LsaCfgFlags");
 
             if (lsaCfgFlags == "1")
@@ -384,7 +385,7 @@ namespace winPEAS.Checks
         {
             try{
                 Beaprint.MainPrint("Cached Creds");
-                Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/stealing-credentials/credentials-protections#cached-credentials", "If > 0, credentials will be cached in the registry and accessible by SYSTEM user");
+                Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#cached-credentials", "If > 0, credentials will be cached in the registry and accessible by SYSTEM user");
                 string cachedlogonscount = RegistryHelper.GetRegValue("HKLM", @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon", "CACHEDLOGONSCOUNT");
                 if (!string.IsNullOrEmpty(cachedlogonscount))
                 {
@@ -526,7 +527,7 @@ namespace winPEAS.Checks
             try
             {
                 Beaprint.MainPrint("UAC Status");
-                Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#basic-uac-bypass-full-file-system-access", "If you are in the Administrators group check how to bypass the UAC");
+                Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#from-administrator-medium-to-high-integrity-level--uac-bypasss", "If you are in the Administrators group check how to bypass the UAC");
                 Dictionary<string, string> uacDict = Info.SystemInfo.SystemInfo.GetUACSystemPolicies();
 
                 Dictionary<string, string> colorsSI = new Dictionary<string, string>()
@@ -559,7 +560,7 @@ namespace winPEAS.Checks
             try
             {
                 Beaprint.MainPrint("Checking WSUS");
-                Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#wsus");
+                Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#wsus");
                 string path = "Software\\Policies\\Microsoft\\Windows\\WindowsUpdate";
                 string path2 = "Software\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU";
                 string HKLM_WSUS = RegistryHelper.GetRegValue("HKLM", path, "WUServer");
@@ -594,7 +595,7 @@ namespace winPEAS.Checks
             try
             {
                 Beaprint.MainPrint("Checking KrbRelayUp");
-                Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#krbrelayup");
+                Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#krbrelayup");
 
                 if (Checks.CurrentAdDomainName.Length > 0)
                 {
@@ -640,7 +641,7 @@ namespace winPEAS.Checks
             try
             {
                 Beaprint.MainPrint("Checking AlwaysInstallElevated");
-                Beaprint.LinkPrint("https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#alwaysinstallelevated");
+                Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html#alwaysinstallelevated");
                 string path = "Software\\Policies\\Microsoft\\Windows\\Installer";
                 string HKLM_AIE = RegistryHelper.GetRegValue("HKLM", path, "AlwaysInstallElevated");
                 string HKCU_AIE = RegistryHelper.GetRegValue("HKCU", path, "AlwaysInstallElevated");
@@ -1130,6 +1131,94 @@ namespace winPEAS.Checks
             {
             }
         }
+
+        private static void PrintPotentialGPOAbuse()
+        {
+            try
+            {
+                Beaprint.MainPrint("Potential GPO abuse vectors (applied domain GPOs writable by current user)");
+
+                if (!Checks.IsPartOfDomain)
+                {
+                    Beaprint.NoColorPrint("    Host is not joined to a domain or domain info is unavailable.");
+                    return;
+                }
+
+                // Build a friendly group list for the current user to quickly spot interesting memberships
+                var currentGroups = winPEAS.Info.UserInfo.User.GetUserGroups(Checks.CurrentUserName, Checks.CurrentUserDomainName) ?? new System.Collections.Generic.List<string>();
+                var hasGPCO = currentGroups.Any(g => string.Equals(g, "Group Policy Creator Owners", System.StringComparison.InvariantCultureIgnoreCase));
+
+                if (hasGPCO)
+                {
+                    Beaprint.BadPrint("    [!] Current user is member of 'Group Policy Creator Owners' — can create/own new GPOs. If you can link a GPO to an OU that applies here, you can execute code as SYSTEM via scheduled task/startup script.");
+                }
+
+                var infos = GroupPolicy.GetLocalGroupPolicyInfos();
+
+                bool anyFinding = false;
+                foreach (var info in infos)
+                {
+                    var fileSysPath = info.FileSysPath?.ToString();
+                    if (string.IsNullOrEmpty(fileSysPath))
+                    {
+                        continue;
+                    }
+
+                    // Only look at domain GPOs stored in SYSVOL
+                    var isSysvolPath = fileSysPath.StartsWith(@"\", System.StringComparison.InvariantCultureIgnoreCase) &&
+                                       fileSysPath.IndexOf(@"\SysVol\", System.StringComparison.InvariantCultureIgnoreCase) >= 0 &&
+                                       fileSysPath.IndexOf(@"\Policies\", System.StringComparison.InvariantCultureIgnoreCase) >= 0;
+
+                    if (!isSysvolPath)
+                    {
+                        continue;
+                    }
+
+                    // Check write/equivalent permissions on common abuse locations inside the GPO
+                    var pathsToCheck = new System.Collections.Generic.List<string>
+                    {
+                        fileSysPath,
+                        System.IO.Path.Combine(fileSysPath, @"Machine\Scripts\Startup"),
+                        System.IO.Path.Combine(fileSysPath, @"User\Scripts\Logon"),
+                        System.IO.Path.Combine(fileSysPath, @"Machine\Preferences\ScheduledTasks")
+                    };
+
+                    foreach (var p in pathsToCheck)
+                    {
+                        var perms = PermissionsHelper.GetPermissionsFolder(p, Checks.CurrentUserSiDs, PermissionType.WRITEABLE_OR_EQUIVALENT);
+                        if (perms != null && perms.Count > 0)
+                        {
+                            if (!anyFinding)
+                            {
+                                Beaprint.LinkPrint("https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/gpo-abuse.html", "Why it matters");
+                            }
+                            anyFinding = true;
+                            Beaprint.BadPrint($"    [!] Writable applied GPO detected");
+                            Beaprint.NoColorPrint($"        GPO Display Name : {info.DisplayName}");
+                            Beaprint.NoColorPrint($"        GPO Name         : {info.GPOName}");
+                            Beaprint.NoColorPrint($"        GPO Link         : {info.Link}");
+                            Beaprint.NoColorPrint($"        Path             : {p}");
+                            foreach (var entry in perms)
+                            {
+                                Beaprint.NoColorPrint($"          -> {entry}");
+                            }
+                            Beaprint.GrayPrint("        Hint: Abuse by adding an immediate Scheduled Task or Startup script to execute as SYSTEM on gpupdate.");
+                        }
+                    }
+                }
+
+                if (!anyFinding && !hasGPCO)
+                {
+                    Beaprint.NoColorPrint("    No obvious GPO abuse via writable SYSVOL paths or GPCO membership detected.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Avoid noisy stack traces in normal runs
+                Beaprint.GrayPrint($"    [!] Error while checking potential GPO abuse: {ex.Message}");
+            }
+        }
+
 
         private static void PrintPowerShellSessionSettings()
         {

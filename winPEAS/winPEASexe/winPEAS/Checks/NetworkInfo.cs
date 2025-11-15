@@ -9,6 +9,7 @@ using winPEAS.Helpers.Extensions;
 using winPEAS.Info.NetworkInfo;
 using winPEAS.Info.NetworkInfo.Enums;
 using winPEAS.Info.NetworkInfo.InternetSettings;
+using winPEAS.Info.NetworkInfo.NetworkScanner;
 
 namespace winPEAS.Checks
 {
@@ -28,7 +29,8 @@ namespace winPEAS.Checks
         {
             Beaprint.GreatPrint("Network Information");
 
-            new List<Action>
+            // Base checklist
+            var checks = new List<Action>
             {
                 PrintNetShares,
                 PrintMappedDrivesWMI,
@@ -38,7 +40,16 @@ namespace winPEAS.Checks
                 PrintFirewallRules,
                 PrintDNSCache,
                 PrintInternetSettings,
-            }.ForEach(action => CheckRunner.Run(action, isDebug));
+                PrintInternetConnectivity
+            };
+
+            // **Add hostname‑resolution check only when requested**
+            if (!Checks.DontCheckHostname)
+                checks.Add(PrintHostnameResolution);
+
+            // **Run every selected check**
+            foreach (var action in checks)
+                CheckRunner.Run(action, isDebug);
         }
 
         private void PrintNetShares()
@@ -427,6 +438,86 @@ namespace winPEAS.Checks
             }
             catch (Exception ex)
             {
+            }
+        }
+
+        private void PrintInternetConnectivity()
+        {
+            try
+            {
+                Beaprint.MainPrint("Internet Connectivity");
+                Beaprint.LinkPrint("", "Checking if internet access is possible via different methods");
+
+                var connectivityInfo = InternetConnectivity.CheckConnectivity();
+
+                // HTTP Access
+                var colorsBool = new Dictionary<string, string>
+                        {
+                            { "Accessible", Beaprint.ansi_color_good },
+                            { "Not Accessible", Beaprint.ansi_color_bad },
+                };
+                Beaprint.AnsiPrint($"    HTTP (80) Access: {(connectivityInfo.HttpAccess ? "Accessible" : "Not Accessible")}", colorsBool);
+                if (!connectivityInfo.HttpAccess && !string.IsNullOrEmpty(connectivityInfo.HttpError))
+                {
+                    Beaprint.PrintException($"      Error: {connectivityInfo.HttpError}");
+                }
+
+                // HTTPS Access
+                Beaprint.AnsiPrint($"    HTTPS (443) Access: {(connectivityInfo.HttpsAccess ? "Accessible" : "Not Accessible")}", colorsBool);
+                if (!connectivityInfo.HttpsAccess && !string.IsNullOrEmpty(connectivityInfo.HttpsError))
+                {
+                    Beaprint.PrintException($"      Error: {connectivityInfo.HttpsError}");
+                }
+
+                // HTTPS By Domain Name
+                Beaprint.AnsiPrint($"    HTTPS (443) Access by Domain Name: {(connectivityInfo.LambdaAccess ? "Accessible" : "Not Accessible")}", colorsBool);
+                if (!connectivityInfo.LambdaAccess && !string.IsNullOrEmpty(connectivityInfo.LambdaError))
+                {
+                    Beaprint.PrintException($"      Error: {connectivityInfo.LambdaError}");
+                }
+
+                // DNS Access
+                Beaprint.AnsiPrint($"    DNS (53) Access: {(connectivityInfo.DnsAccess ? "Accessible" : "Not Accessible")}", colorsBool);
+                if (!connectivityInfo.DnsAccess && !string.IsNullOrEmpty(connectivityInfo.DnsError))
+                {
+                    Beaprint.PrintException($"      Error: {connectivityInfo.DnsError}");
+                }
+
+                // ICMP Access
+                Beaprint.AnsiPrint($"    ICMP (ping) Access: {(connectivityInfo.IcmpAccess ? "Accessible" : "Not Accessible")}", colorsBool);
+                if (!connectivityInfo.IcmpAccess && !string.IsNullOrEmpty(connectivityInfo.IcmpError))
+                {
+                    Beaprint.PrintException($"      Error: {connectivityInfo.IcmpError}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Beaprint.PrintException(ex.Message);
+            }
+        }
+
+        private void PrintHostnameResolution()
+        {
+            try
+            {
+                Beaprint.MainPrint("Hostname Resolution");
+                Beaprint.LinkPrint("", "Checking if the hostname can be resolved externally");
+
+                var resolutionInfo = HostnameResolution.TryExternalCheck();
+
+                if (!string.IsNullOrEmpty(resolutionInfo.ExternalCheckResult))
+                {
+                    Beaprint.GoodPrint($"    External Check Result:");
+                    Beaprint.NoColorPrint(resolutionInfo.ExternalCheckResult);
+                }
+                else if (!string.IsNullOrEmpty(resolutionInfo.Error))
+                {
+                    Beaprint.PrintException($"    {resolutionInfo.Error}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Beaprint.PrintException(ex.Message);
             }
         }
     }

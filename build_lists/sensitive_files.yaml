@@ -895,6 +895,14 @@ search:
                 type: f
                 search_in: 
                   - common
+          
+          - name: "credentials.tfrc.json"
+            value: 
+                type: f
+                bad_regex: ".*"
+                search_in:
+                  - common
+                  
 
   - name: Racoon
     value:
@@ -1265,12 +1273,14 @@ search:
                 type: f
                 bad_regex: ".*"
                 search_in:
-                  - common 
+                  - common
   
   - name: Cloud Credentials
     value:
         config:
           auto_check: True
+          exec:
+            - '(pwsh -Command "Save-AzContext -Path /tmp/az-context3489ht.json" && cat /tmp/az-context3489ht.json && rm /tmp/az-context3489ht.json) || echo_not_found "pwsh"'
 
         files:
           #- name: "credentials"
@@ -1379,13 +1389,54 @@ search:
                   - common
 
           - name: "AzureRMContext.json"
+            value:
+                bad_regex: "Id.*|Credential.*"
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "clouds.config"
+            value: 
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "service_principal_entries.json"
             value: 
                 bad_regex: ".*"
                 type: f
                 search_in: 
                   - common
           
-          - name: "ErrorRecords" #Azure logs can contain creentials
+          - name: "msal_token_cache.json"
+            value: 
+                bad_regex: ".*"
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "msal_http_cache.bin"
+            value: 
+                just_list_file: True
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "service_principal_entries.bin"
+            value: 
+                just_list_file: True
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "msal_token_cache.bin"
+            value: 
+                just_list_file: True
+                type: f
+                search_in: 
+                  - common
+          
+          - name: "ErrorRecords" #Azure logs can contain crentials
             value: 
                 type: d
                 search_in: 
@@ -1458,7 +1509,7 @@ search:
         config:
           auto_check: True
           exec:
-            - ipa_exists="$(command -v ipa)"; if [ "$ipa_exists" ]; then print_info "https://book.hacktricks.xyz/linux-hardening/freeipa-pentesting"; fi
+            - ipa_exists="$(command -v ipa)"; if [ "$ipa_exists" ]; then print_info "https://book.hacktricks.wiki/en/linux-hardening/freeipa-pentesting.html"; fi
         
         files:
           - name: "ipa"
@@ -2012,6 +2063,11 @@ search:
                   - common
 
           - name: "*.gpg"
+            value: 
+                type: f
+                search_in: 
+                  - common
+          - name: "private-keys-v1.d/*.key"
             value: 
                 type: f
                 search_in: 
@@ -3897,4 +3953,25 @@ search:
                 just_list_file: True
                 type: f
                 search_in: 
+                  - common
+
+  - name: Crontab-UI
+    value:
+        config:
+          auto_check: True
+
+        files:
+          - name: "crontab.db"
+            value:
+                bad_regex: "-P[[:space:]]+\\S+|--password[[:space:]]+\\S+|[Pp]ass(word)?|[Tt]oken|[Ss]ecret"
+                only_bad_lines: True
+                type: f
+                search_in:
+                  - common
+
+          - name: "crontab-ui.service"
+            value:
+                just_list_file: True
+                type: f
+                search_in:
                   - common

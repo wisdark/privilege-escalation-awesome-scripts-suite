@@ -31,7 +31,7 @@ namespace winPEAS.Helpers
         public static string ansi_current_user = MAGENTA;
 
         private static string Advisory =
-            "winpeas should be used for authorized penetration testing and/or educational purposes only." +
+            "winpeas should be used for authorized penetration testing and/or educational purposes only. " +
             "Any misuse of this software will not be the responsibility of the author or of any other collaborator. " +
             "Use it at your own devices and/or with the device owner's permission.";
 
@@ -81,7 +81,7 @@ namespace winPEAS.Helpers
        /---------------------------------------------------------------------------------\
        |                             {1}Do you like PEASS?{0}                                  |
        |---------------------------------------------------------------------------------| 
-       |         {3}Learn Cloud Hacking{0}       :     {2}training.hacktricks.xyz{0}                 |
+       |         {3}Learn Cloud Hacking{0}       :     {2}training.hacktricks.xyz {0}                |
        |         {3}Follow on Twitter{0}         :     {2}@hacktricks_live{0}                        |
        |         {3}Respect on HTB{0}            :     {2}SirBroccoli            {0}                 |
        |---------------------------------------------------------------------------------|
@@ -104,7 +104,7 @@ namespace winPEAS.Helpers
 
             PrintLegend();
             Console.WriteLine();
-            Console.WriteLine(BLUE + " You can find a Windows local PE Checklist here: " + YELLOW + "https://book.hacktricks.xyz/windows-hardening/checklist-windows-privilege-escalation");
+            Console.WriteLine(BLUE + " You can find a Windows local PE Checklist here: " + YELLOW + "https://book.hacktricks.wiki/en/windows-hardening/checklist-windows-privilege-escalation.html");
         }
 
         static void PrintLegend()
@@ -129,6 +129,7 @@ namespace winPEAS.Helpers
             Console.WriteLine(LCYAN + "        servicesinfo" + GRAY + "         Search services information" + NOCOLOR);
             Console.WriteLine(LCYAN + "        applicationsinfo" + GRAY + "     Search installed applications information" + NOCOLOR);
             Console.WriteLine(LCYAN + "        networkinfo" + GRAY + "          Search network information" + NOCOLOR);
+            Console.WriteLine(LCYAN + "        activedirectoryinfo" + GRAY + "   Quick AD checks (gMSA readable passwords, AD CS template rights)" + NOCOLOR);
             Console.WriteLine(LCYAN + "        cloudinfo" + GRAY + "            Enumerate cloud information" + NOCOLOR);
             Console.WriteLine(LCYAN + "        windowscreds" + GRAY + "         Search windows credentials" + NOCOLOR);
             Console.WriteLine(LCYAN + "        browserinfo" + GRAY + "          Search browser information" + NOCOLOR);
@@ -142,6 +143,7 @@ namespace winPEAS.Helpers
             Console.WriteLine(LCYAN + "        searchpf" + GRAY + "             Search credentials via regex also in Program Files folders" + NOCOLOR);
             Console.WriteLine(LCYAN + "        wait" + GRAY + "                 Wait for user input between checks" + NOCOLOR);
             Console.WriteLine(LCYAN + "        debug" + GRAY + "                Display debugging information - memory usage, method execution time" + NOCOLOR);
+            Console.WriteLine(LCYAN + "        dont-check-hostname" + GRAY + "  Don't check the hostname externally" + NOCOLOR);
             Console.WriteLine(LCYAN + "        log[=logfile]" + GRAY + $"        Log all output to file defined as logfile, or to \"{Checks.Checks.DefaultLogFile}\" if not specified" + NOCOLOR);
             Console.WriteLine(LCYAN + "        max-regex-file-size=1000000" + GRAY + $"        Max file size (in Bytes) to search regex in. Default: {Checks.Checks.MaxRegexFileSize}B" + NOCOLOR);
 

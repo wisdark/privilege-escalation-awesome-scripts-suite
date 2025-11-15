@@ -97,7 +97,7 @@ class LinpeasBuilder:
         for orig_url in urls:
             tar_gz_bin_name = ""
             if ",,," in orig_url:
-                tar_gz_bin_name = url.split(",,,")[1]
+                tar_gz_bin_name = orig_url.split(",,,")[1]
                 url = orig_url.split(",,,")[0]
             else:
                 url = orig_url
@@ -402,13 +402,15 @@ class LinpeasBuilder:
 
 
     def __replace_mark(self, mark: str, find_calls: list, join_char: str):
-        """Substitude the markup with the actual code"""
-        
-        self.linpeas_sh = self.linpeas_sh.replace(mark, join_char.join(find_calls)) #New line char is't needed
+        """Substitute the markup with the actual code"""
+
+        self.linpeas_sh = self.linpeas_sh.replace(mark, join_char.join(find_calls)) #New line char isn't needed
     
     def write_linpeas(self, path):
         """Write on disk the final linpeas"""
         
         with open(path, "w") as f:
             f.write(self.linpeas_sh)
+        
+        print(f"[+] Linpeas written on {path}")
     

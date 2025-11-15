@@ -8,11 +8,21 @@
 # Functions Used:
 # Global Variables:
 # Initial Functions:
-# Generated Global Variables:
+# Generated Global Variables: $local_pid, $TIMEOUT_INTERNET_SECONDS_443
 # Fat linpeas: 0
 # Small linpeas: 1
 
 
+
 check_tcp_443(){
-  (timeout -s KILL 20 /bin/bash -c '(echo >/dev/tcp/1.1.1.1/443 && echo "Port 443 is accessible" || echo "Port 443 is not accessible") 2>/dev/null | grep "accessible"') 2>/dev/null || echo "Port 443 is not accessible"
+  local TIMEOUT_INTERNET_SECONDS_443=$1
+  if ! [ -f "/bin/bash" ]; then
+    echo "  /bin/bash not found"
+    return
+  fi
+
+  # example.com
+  (bash -c '(echo >/dev/tcp/104.18.74.230/443 2>/dev/null && echo "Port 443 is accessible" && exit 0) 2>/dev/null || echo "Port 443 is not accessible"') & local_pid=$!
+
+  sleep $TIMEOUT_INTERNET_SECONDS_443 && kill -9 $local_pid 2>/dev/null && echo "Port 443 is not accessible"
 }

